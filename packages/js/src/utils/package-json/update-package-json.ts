@@ -42,6 +42,7 @@ export interface UpdatePackageJsonOption {
   format?: SupportedFormat[];
   outputPath: string;
   outputFileName?: string;
+  outputFileNameForCjs?: string;
   outputFileExtensionForCjs?: `.${string}`;
   skipTypings?: boolean;
   generateExportsField?: boolean;
@@ -193,6 +194,8 @@ export function getUpdatedPackageJsonContent(
   const mainJsFile =
     options.outputFileName ?? `${relativeMainFileDir}${mainFile}.js`;
 
+  const mainCjsFile = options.outputFileNameForCjs ?? mainJsFile;
+
   if (hasEsmFormat) {
     // Unofficial field for backwards compat.
     packageJson.module ??= mainJsFile;
@@ -215,7 +218,7 @@ export function getUpdatedPackageJsonContent(
   // Bundlers like rollup and esbuild supports .cjs for CJS and .js for ESM.
   // Bundlers/Compilers like webpack, tsc, swc do not have different file extensions.
   if (hasCjsFormat) {
-    const { dir, name } = parse(mainJsFile);
+    const { dir, name } = parse(mainCjsFile);
     const cjsMain = `${dir ? dir : '.'}/${name}${
       options.outputFileExtensionForCjs ?? '.js'
     }`;
