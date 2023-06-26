@@ -1,5 +1,3 @@
-import { parseSyml, stringifySyml } from '@yarnpkg/parsers';
-import { stringify } from '@yarnpkg/lockfile';
 import { getHoistedPackageVersion } from './utils/package-json';
 import { ProjectGraphBuilder } from '../../../project-graph/project-graph-builder';
 import { satisfies, Range } from 'semver';
@@ -41,12 +39,22 @@ export function parseYarnLockfile(
   lockFileContent: string,
   builder: ProjectGraphBuilder
 ) {
+  const { parseSyml } = require('@yarnpkg/parsers');
   const data = parseSyml(lockFileContent);
 
   // we use key => node map to avoid duplicate work when parsing keys
   const keyMap = new Map<string, ProjectGraphExternalNode>();
   addNodes(data, builder, keyMap);
   addDependencies(data, builder, keyMap);
+}
+
+function getPackageNames(keys: string): string[] {
+  const packageNames = new Set<string>();
+  keys.split(', ').forEach((key) => {
+    const packageName = key.slice(0, key.indexOf('@', 1));
+    packageNames.add(packageName);
+  });
+  return Array.from(packageNames);
 }
 
 function addNodes(
@@ -62,40 +70,45 @@ function addNodes(
     if (snapshot.linkType === 'soft' || keys.includes('@patch:')) {
       return;
     }
-    const packageName = keys.slice(0, keys.indexOf('@', 1));
-    const version = findVersion(
-      packageName,
-      keys.split(', ')[0],
-      snapshot,
-      isBerry
-    );
-    keys.split(', ').forEach((key) => {
-      // we don't need to keep duplicates, we can just track the keys
-      const existingNode = nodes.get(packageName)?.get(version);
-      if (existingNode) {
-        keyMap.set(key, existingNode);
-        return;
-      }
+    const packageNames = getPackageNames(keys);
+    packageNames.forEach((packageName) => {
+      const version = findVersion(
+        packageName,
+        keys.split(', ')[0],
+        snapshot,
+        isBerry
+      );
 
-      const node: ProjectGraphExternalNode = {
-        type: 'npm',
-        name: version ? `npm:${packageName}@${version}` : `npm:${packageName}`,
-        data: {
-          version,
-          packageName,
-          hash:
-            snapshot.integrity ||
-            snapshot.checksum ||
-            hashArray([packageName, version]),
-        },
-      };
+      keys.split(', ').forEach((key) => {
+        // we don't need to keep duplicates, we can just track the keys
+        const existingNode = nodes.get(packageName)?.get(version);
+        if (existingNode) {
+          keyMap.set(key, existingNode);
+          return;
+        }
 
-      keyMap.set(key, node);
-      if (!nodes.has(packageName)) {
-        nodes.set(packageName, new Map([[version, node]]));
-      } else {
-        nodes.get(packageName).set(version, node);
-      }
+        const node: ProjectGraphExternalNode = {
+          type: 'npm',
+          name: version
+            ? `npm:${packageName}@${version}`
+            : `npm:${packageName}`,
+          data: {
+            version,
+            packageName,
+            hash:
+              snapshot.integrity ||
+              snapshot.checksum ||
+              hashArray([packageName, version]),
+          },
+        };
+
+        keyMap.set(key, node);
+        if (!nodes.has(packageName)) {
+          nodes.set(packageName, new Map([[version, node]]));
+        } else {
+          nodes.get(packageName).set(version, node);
+        }
+      });
     });
   });
 
@@ -200,6 +213,7 @@ export function stringifyYarnLockfile(
   rootLockFileContent: string,
   packageJson: NormalizedPackageJson
 ): string {
+  const { parseSyml, stringifySyml } = require('@yarnpkg/parsers');
   const { __metadata, ...dependencies } = parseSyml(rootLockFileContent);
   const isBerry = !!__metadata;
 
@@ -223,6 +237,7 @@ export function stringifyYarnLockfile(
       })
     );
   } else {
+    const { stringify } = require('@yarnpkg/lockfile');
     return stringify(sortObjectByKeys(snapshots));
   }
 }

@@ -1,5 +1,4 @@
 import {
-  addDependenciesToPackageJson,
   formatFiles,
   joinPathFragments,
   logger,
@@ -16,9 +15,8 @@ import {
 
 import type { Linter as ESLint } from 'eslint';
 
-import { Schema as EsLintExecutorOptions } from '@nx/linter/src/executors/eslint/schema';
+import type { Schema as EsLintExecutorOptions } from '@nx/linter/src/executors/eslint/schema';
 
-import { jsoncEslintParserVersion } from '../../utils/versions';
 import { PluginLintChecksGeneratorSchema } from './schema';
 import { NX_PREFIX } from 'nx/src/utils/logger';
 import { PackageJson, readNxMigrateConfig } from 'nx/src/utils/package-json';
@@ -57,17 +55,10 @@ export default async function pluginLintCheckGenerator(
       `${NX_PREFIX} plugin lint checks can only be added to plugins which use eslint for linting`
     );
   }
-  const installTask = addDependenciesToPackageJson(
-    host,
-    {},
-    { 'jsonc-eslint-parser': jsoncEslintParserVersion }
-  );
 
   if (!options.skipFormat) {
     await formatFiles(host);
   }
-
-  return () => installTask;
 }
 
 export function addMigrationJsonChecks(
@@ -260,7 +251,7 @@ function setupVsCodeLintingForJsonFiles(host: Tree) {
     existing = readJson<Record<string, unknown>>(host, '.vscode/settings.json');
   } else {
     logger.info(
-      `${NX_PREFIX} We've updated the vscode settings for this repository to ensure that plugin lint checks show up inside your IDE. This created .vscode/settings.json. To read more about this file, check vscode's documentation. It is frequently not commited, so other developers may need to add similar settings if they'd like to see the lint checks in the IDE rather than only during linting.`
+      `${NX_PREFIX} We've updated the vscode settings for this repository to ensure that plugin lint checks show up inside your IDE. This created .vscode/settings.json. To read more about this file, check vscode's documentation. It is frequently not committed, so other developers may need to add similar settings if they'd like to see the lint checks in the IDE rather than only during linting.`
     );
   }
 

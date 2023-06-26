@@ -48,12 +48,12 @@
             {
               "name": "React Standalone",
               "id": "react-standalone-tutorial",
-              "file": "shared/react-standalone-tutorial/1-code-generation"
+              "file": "shared/react-standalone-tutorial/react-standalone"
             },
             {
               "name": "Angular Standalone",
               "id": "angular-standalone-tutorial",
-              "file": "shared/angular-standalone-tutorial/1-code-generation"
+              "file": "shared/angular-standalone-tutorial/angular-standalone"
             },
             {
               "name": "Node Standalone",
@@ -382,7 +382,7 @@
             {
               "name": "More Concept Guides »",
               "id": "more-concept-guides",
-              "file": "shared/concepts/more-concepts"
+              "path": "/more-concepts"
             }
           ]
         },
@@ -734,6 +734,12 @@
               "tags": ["use-code-generators"],
               "path": "/reference/nx-json#generators",
               "isExternal": true
+            },
+            {
+              "name": "Site Map",
+              "id": "sitemap",
+              "tags": [],
+              "file": "shared/reference/sitemap"
             }
           ]
         }
@@ -1189,6 +1195,107 @@
               "id": "deno-netlify-functions",
               "tags": ["deployment", "deno"],
               "file": "shared/recipes/deployment/deno-netlify-edge-functions"
+            },
+            {
+              "name": "Deploying Next.js applications to Vercel",
+              "id": "deploy-nextjs-to-vercel",
+              "file": "shared/recipes/deployment/deploy-nextjs-to-vercel"
+            }
+          ]
+        },
+        {
+          "name": "Database",
+          "id": "database",
+          "description": "Recipes for using various databases in node apps.",
+          "itemList": [
+            {
+              "name": "Using Prisma with NestJS",
+              "id": "nestjs-prisma",
+              "tags": ["database", "node"],
+              "file": "shared/recipes/database/nestjs-prisma"
+            },
+            {
+              "name": "Using Mongo with Fastify",
+              "id": "mongo-fastify",
+              "tags": ["database", "node"],
+              "file": "shared/recipes/database/mongo-fastify"
+            },
+            {
+              "name": "Using Redis with Fastify",
+              "id": "redis-fastify",
+              "tags": ["database", "node"],
+              "file": "shared/recipes/database/redis-fastify"
+            },
+            {
+              "name": "Using Postgres with Fastify",
+              "id": "postgres-fastify",
+              "tags": ["database", "node"],
+              "file": "shared/recipes/database/postgres-fastify"
+            },
+            {
+              "name": "Using PlanetScale with Serverless Fastify",
+              "id": "serverless-fastify-planetscale",
+              "tags": ["database", "node", "serverless"],
+              "file": "shared/recipes/database/serverless-fastify-planetscale"
+            }
+          ]
+        },
+
+        {
+          "name": "Enforce Module Boundaries",
+          "id": "enforce-module-boundaries",
+          "description": "Configuring the enforce module boundaries rule",
+          "itemList": [
+            {
+              "name": "Ban Dependencies with Certain Tags",
+              "id": "ban-dependencies-with-tags",
+              "tags": ["enforce-project-boundaries"],
+              "file": "shared/recipes/ban-dependencies-with-tags"
+            },
+            {
+              "name": "Tag in Multiple Dimensions",
+              "id": "tag-multiple-dimensions",
+              "tags": ["enforce-project-boundaries"],
+              "file": "shared/recipes/tag-multiple-dimensions"
+            },
+            {
+              "name": "Ban External Imports",
+              "id": "ban-external-imports",
+              "tags": ["enforce-project-boundaries"],
+              "file": "shared/recipes/ban-external-imports"
+            },
+            {
+              "name": "Tags Allow List",
+              "id": "tags-allow-list",
+              "tags": ["enforce-project-boundaries"],
+              "file": "shared/recipes/tags-allow-list"
+            }
+          ]
+        },
+        {
+          "name": "Example Repos",
+          "id": "example-repos",
+          "description": "Examples of different ways to use Nx",
+          "itemList": [
+            {
+              "name": "Powering Up React Development With Nx",
+              "id": "react-nx",
+              "file": "shared/examples/react-nx"
+            },
+            {
+              "name": "Using Apollo GraphQL",
+              "id": "apollo-react",
+              "file": "shared/examples/apollo-react"
+            },
+            {
+              "name": "Large Repo and Caching",
+              "id": "caching",
+              "file": "shared/examples/caching"
+            },
+            {
+              "name": "Large Repo and DTE",
+              "id": "dte",
+              "file": "shared/examples/dte"
             }
           ]
         },
@@ -1236,7 +1343,6 @@
               "id": "adding-assets-react",
               "file": "shared/guides/adding-assets"
             },
-
             {
               "name": "Setup incremental builds for Angular applications",
               "id": "setup-incremental-builds-angular",
@@ -1258,11 +1364,6 @@
               "name": "Configuring Browser Support",
               "id": "browser-support",
               "file": "shared/guides/browser-support"
-            },
-            {
-              "name": "Deploying Next.js applications to Vercel",
-              "id": "deploy-nextjs-to-vercel",
-              "file": "shared/guides/deploy-nextjs-to-vercel"
             },
             {
               "name": "Using Tailwind CSS in React",
@@ -1290,26 +1391,6 @@
               "file": "shared/guides/misc-data-persistence"
             },
             {
-              "name": "Powering Up React Development With Nx",
-              "id": "react-nx",
-              "file": "shared/examples/react-nx"
-            },
-            {
-              "name": "Using Apollo GraphQL",
-              "id": "apollo-react",
-              "file": "shared/examples/apollo-react"
-            },
-            {
-              "name": "Large Repo and Caching",
-              "id": "caching",
-              "file": "shared/examples/caching"
-            },
-            {
-              "name": "Large Repo and DTE",
-              "id": "dte",
-              "file": "shared/examples/dte"
-            },
-            {
               "name": "Find the Last Successful Commit in Azure Pipelines",
               "id": "azure-last-successful-commit",
               "file": "shared/recipes/azure-last-successful-commit"
@@ -1319,30 +1400,6 @@
               "id": "troubleshoot-cache-misses",
               "tags": ["cache-task-results"],
               "file": "shared/recipes/troubleshoot-cache-misses"
-            },
-            {
-              "name": "Ban Dependencies with Certain Tags",
-              "id": "ban-dependencies-with-tags",
-              "tags": ["enforce-project-boundaries"],
-              "file": "shared/recipes/ban-dependencies-with-tags"
-            },
-            {
-              "name": "Tag in Multiple Dimensions",
-              "id": "tag-multiple-dimensions",
-              "tags": ["enforce-project-boundaries"],
-              "file": "shared/recipes/tag-multiple-dimensions"
-            },
-            {
-              "name": "Ban External Imports",
-              "id": "ban-external-imports",
-              "tags": ["enforce-project-boundaries"],
-              "file": "shared/recipes/ban-external-imports"
-            },
-            {
-              "name": "Tags Allow List",
-              "id": "tags-allow-list",
-              "tags": ["enforce-project-boundaries"],
-              "file": "shared/recipes/tags-allow-list"
             },
             {
               "name": "Export Project Graph",

@@ -1,7 +1,8 @@
 import {
   logger,
-  ProjectGraph,
-  ProjectGraphDependency,
+  type ProjectGraph,
+  type ProjectGraphDependency,
+  type ProjectGraphExternalNode,
   readJsonFile,
 } from '@nx/devkit';
 import { DependentBuildableProjectNode } from './buildable-libs-utils';
@@ -38,6 +39,7 @@ const jsExecutors = {
  * @param {HelperDependency} helperDependency
  * @param {string} configPath
  * @param {DependentBuildableProjectNode[]} dependencies
+ * @param {ProjectGraph} projectGraph
  * @param {boolean=false} returnDependencyIfFound
  */
 export function getHelperDependency(
@@ -71,7 +73,18 @@ export function getHelperDependency(
 
   if (!isHelperNeeded) return null;
 
-  const libNode = projectGraph.externalNodes[helperDependency];
+  let libNode: ProjectGraphExternalNode | null = projectGraph[helperDependency];
+
+  // If libNode is not found due to the version suffix from pnpm lockfile, try to match it by package name.
+  if (!libNode) {
+    for (const nodeName of Object.keys(projectGraph.externalNodes)) {
+      const node = projectGraph.externalNodes[nodeName];
+      if (`npm:${node.data.packageName}` === helperDependency) {
+        libNode = node;
+        break;
+      }
+    }
+  }
 
   if (!libNode) {
     logger.warn(
@@ -110,8 +123,7 @@ export function getHelperDependenciesFromProjectGraph(
       // we check if a dependency is part of the workspace and if it's a library
       // because we wouldn't want to include external dependencies (npm packages)
       if (
-        !dependency.target.startsWith('npm:') &&
-        !!projectGraph.nodes[dependency.target] &&
+        projectGraph.nodes[dependency.target] &&
         projectGraph.nodes[dependency.target].type === 'lib'
       ) {
         const targetData = projectGraph.nodes[dependency.target].data;

@@ -373,38 +373,38 @@
     },
     {
       "description": "",
-      "file": "shared/eslint",
-      "id": "eslint",
-      "name": "Using ESLint in Nx Workspaces",
-      "path": "/recipes/other/eslint"
-    },
-    {
-      "description": "",
       "file": "shared/recipes/ban-dependencies-with-tags",
       "id": "ban-dependencies-with-tags",
       "name": "Ban Dependencies with Certain Tags",
-      "path": "/recipes/other/ban-dependencies-with-tags"
+      "path": "/recipes/enforce-module-boundaries/ban-dependencies-with-tags"
     },
     {
       "description": "",
       "file": "shared/recipes/tag-multiple-dimensions",
       "id": "tag-multiple-dimensions",
       "name": "Tag in Multiple Dimensions",
-      "path": "/recipes/other/tag-multiple-dimensions"
+      "path": "/recipes/enforce-module-boundaries/tag-multiple-dimensions"
     },
     {
       "description": "",
       "file": "shared/recipes/ban-external-imports",
       "id": "ban-external-imports",
       "name": "Ban External Imports",
-      "path": "/recipes/other/ban-external-imports"
+      "path": "/recipes/enforce-module-boundaries/ban-external-imports"
     },
     {
       "description": "",
       "file": "shared/recipes/tags-allow-list",
       "id": "tags-allow-list",
       "name": "Tags Allow List",
-      "path": "/recipes/other/tags-allow-list"
+      "path": "/recipes/enforce-module-boundaries/tags-allow-list"
+    },
+    {
+      "description": "",
+      "file": "shared/eslint",
+      "id": "eslint",
+      "name": "Using ESLint in Nx Workspaces",
+      "path": "/recipes/other/eslint"
     },
     {
       "description": "The core Nx plugin contains the core functionality of Nx like the project graph, nx commands and task orchestration.",
@@ -858,6 +858,41 @@
       "id": "node-aws-lambda",
       "name": "Deploying AWS lambda in Node.js",
       "path": "/recipes/deployment/node-aws-lambda"
+    },
+    {
+      "description": "",
+      "file": "shared/recipes/database/nestjs-prisma",
+      "id": "nestjs-prisma",
+      "name": "Using Prisma with NestJS",
+      "path": "/recipes/database/nestjs-prisma"
+    },
+    {
+      "description": "",
+      "file": "shared/recipes/database/mongo-fastify",
+      "id": "mongo-fastify",
+      "name": "Using Mongo with Fastify",
+      "path": "/recipes/database/mongo-fastify"
+    },
+    {
+      "description": "",
+      "file": "shared/recipes/database/redis-fastify",
+      "id": "redis-fastify",
+      "name": "Using Redis with Fastify",
+      "path": "/recipes/database/redis-fastify"
+    },
+    {
+      "description": "",
+      "file": "shared/recipes/database/postgres-fastify",
+      "id": "postgres-fastify",
+      "name": "Using Postgres with Fastify",
+      "path": "/recipes/database/postgres-fastify"
+    },
+    {
+      "description": "",
+      "file": "shared/recipes/database/serverless-fastify-planetscale",
+      "id": "serverless-fastify-planetscale",
+      "name": "Using PlanetScale with Serverless Fastify",
+      "path": "/recipes/database/serverless-fastify-planetscale"
     }
   ],
   "deno": [
@@ -874,6 +909,52 @@
       "id": "deno-netlify-functions",
       "name": "Add and Deploy Netlify Edge Functions with Deno",
       "path": "/recipes/deployment/deno-netlify-functions"
+    }
+  ],
+  "database": [
+    {
+      "description": "",
+      "file": "shared/recipes/database/nestjs-prisma",
+      "id": "nestjs-prisma",
+      "name": "Using Prisma with NestJS",
+      "path": "/recipes/database/nestjs-prisma"
+    },
+    {
+      "description": "",
+      "file": "shared/recipes/database/mongo-fastify",
+      "id": "mongo-fastify",
+      "name": "Using Mongo with Fastify",
+      "path": "/recipes/database/mongo-fastify"
+    },
+    {
+      "description": "",
+      "file": "shared/recipes/database/redis-fastify",
+      "id": "redis-fastify",
+      "name": "Using Redis with Fastify",
+      "path": "/recipes/database/redis-fastify"
+    },
+    {
+      "description": "",
+      "file": "shared/recipes/database/postgres-fastify",
+      "id": "postgres-fastify",
+      "name": "Using Postgres with Fastify",
+      "path": "/recipes/database/postgres-fastify"
+    },
+    {
+      "description": "",
+      "file": "shared/recipes/database/serverless-fastify-planetscale",
+      "id": "serverless-fastify-planetscale",
+      "name": "Using PlanetScale with Serverless Fastify",
+      "path": "/recipes/database/serverless-fastify-planetscale"
+    }
+  ],
+  "serverless": [
+    {
+      "description": "",
+      "file": "shared/recipes/database/serverless-fastify-planetscale",
+      "id": "serverless-fastify-planetscale",
+      "name": "Using PlanetScale with Serverless Fastify",
+      "path": "/recipes/database/serverless-fastify-planetscale"
     }
   ],
   "workspace-watching": [

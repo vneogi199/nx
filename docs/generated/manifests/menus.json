@@ -948,7 +948,7 @@
           },
           {
             "name": "More Concept Guides »",
-            "path": "/concepts/more-concept-guides",
+            "path": "/more-concepts",
             "id": "more-concept-guides",
             "isExternal": false,
             "children": [],
@@ -1001,14 +1001,6 @@
         "name": "Affected",
         "path": "/concepts/affected",
         "id": "affected",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
-        "name": "More Concept Guides »",
-        "path": "/concepts/more-concept-guides",
-        "id": "more-concept-guides",
         "isExternal": false,
         "children": [],
         "disableCollapsible": false
@@ -1855,6 +1847,14 @@
             "isExternal": true,
             "children": [],
             "disableCollapsible": false
+          },
+          {
+            "name": "Site Map",
+            "path": "/see-also/sitemap",
+            "id": "sitemap",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
           }
         ],
         "disableCollapsible": false
@@ -1912,6 +1912,14 @@
         "path": "/reference/nx-json#generators",
         "id": "nxjson-generator-defaults",
         "isExternal": true,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Site Map",
+        "path": "/see-also/sitemap",
+        "id": "sitemap",
+        "isExternal": false,
         "children": [],
         "disableCollapsible": false
       }
@@ -2686,6 +2694,14 @@
             "isExternal": false,
             "children": [],
             "disableCollapsible": false
+          },
+          {
+            "name": "Deploying Next.js applications to Vercel",
+            "path": "/recipes/deployment/deploy-nextjs-to-vercel",
+            "id": "deploy-nextjs-to-vercel",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
           }
         ],
         "disableCollapsible": false
@@ -2726,6 +2742,249 @@
         "name": "Add and Deploy Netlify Edge Functions with Deno",
         "path": "/recipes/deployment/deno-netlify-functions",
         "id": "deno-netlify-functions",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Deploying Next.js applications to Vercel",
+        "path": "/recipes/deployment/deploy-nextjs-to-vercel",
+        "id": "deploy-nextjs-to-vercel",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Database",
+        "path": "/recipes/database",
+        "id": "database",
+        "isExternal": false,
+        "children": [
+          {
+            "name": "Using Prisma with NestJS",
+            "path": "/recipes/database/nestjs-prisma",
+            "id": "nestjs-prisma",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Using Mongo with Fastify",
+            "path": "/recipes/database/mongo-fastify",
+            "id": "mongo-fastify",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Using Redis with Fastify",
+            "path": "/recipes/database/redis-fastify",
+            "id": "redis-fastify",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Using Postgres with Fastify",
+            "path": "/recipes/database/postgres-fastify",
+            "id": "postgres-fastify",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Using PlanetScale with Serverless Fastify",
+            "path": "/recipes/database/serverless-fastify-planetscale",
+            "id": "serverless-fastify-planetscale",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          }
+        ],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Using Prisma with NestJS",
+        "path": "/recipes/database/nestjs-prisma",
+        "id": "nestjs-prisma",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Using Mongo with Fastify",
+        "path": "/recipes/database/mongo-fastify",
+        "id": "mongo-fastify",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Using Redis with Fastify",
+        "path": "/recipes/database/redis-fastify",
+        "id": "redis-fastify",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Using Postgres with Fastify",
+        "path": "/recipes/database/postgres-fastify",
+        "id": "postgres-fastify",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Using PlanetScale with Serverless Fastify",
+        "path": "/recipes/database/serverless-fastify-planetscale",
+        "id": "serverless-fastify-planetscale",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Enforce Module Boundaries",
+        "path": "/recipes/enforce-module-boundaries",
+        "id": "enforce-module-boundaries",
+        "isExternal": false,
+        "children": [
+          {
+            "name": "Ban Dependencies with Certain Tags",
+            "path": "/recipes/enforce-module-boundaries/ban-dependencies-with-tags",
+            "id": "ban-dependencies-with-tags",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Tag in Multiple Dimensions",
+            "path": "/recipes/enforce-module-boundaries/tag-multiple-dimensions",
+            "id": "tag-multiple-dimensions",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Ban External Imports",
+            "path": "/recipes/enforce-module-boundaries/ban-external-imports",
+            "id": "ban-external-imports",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Tags Allow List",
+            "path": "/recipes/enforce-module-boundaries/tags-allow-list",
+            "id": "tags-allow-list",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          }
+        ],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Ban Dependencies with Certain Tags",
+        "path": "/recipes/enforce-module-boundaries/ban-dependencies-with-tags",
+        "id": "ban-dependencies-with-tags",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Tag in Multiple Dimensions",
+        "path": "/recipes/enforce-module-boundaries/tag-multiple-dimensions",
+        "id": "tag-multiple-dimensions",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Ban External Imports",
+        "path": "/recipes/enforce-module-boundaries/ban-external-imports",
+        "id": "ban-external-imports",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Tags Allow List",
+        "path": "/recipes/enforce-module-boundaries/tags-allow-list",
+        "id": "tags-allow-list",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Example Repos",
+        "path": "/recipes/example-repos",
+        "id": "example-repos",
+        "isExternal": false,
+        "children": [
+          {
+            "name": "Powering Up React Development With Nx",
+            "path": "/recipes/example-repos/react-nx",
+            "id": "react-nx",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Using Apollo GraphQL",
+            "path": "/recipes/example-repos/apollo-react",
+            "id": "apollo-react",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Large Repo and Caching",
+            "path": "/recipes/example-repos/caching",
+            "id": "caching",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          },
+          {
+            "name": "Large Repo and DTE",
+            "path": "/recipes/example-repos/dte",
+            "id": "dte",
+            "isExternal": false,
+            "children": [],
+            "disableCollapsible": false
+          }
+        ],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Powering Up React Development With Nx",
+        "path": "/recipes/example-repos/react-nx",
+        "id": "react-nx",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Using Apollo GraphQL",
+        "path": "/recipes/example-repos/apollo-react",
+        "id": "apollo-react",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Large Repo and Caching",
+        "path": "/recipes/example-repos/caching",
+        "id": "caching",
+        "isExternal": false,
+        "children": [],
+        "disableCollapsible": false
+      },
+      {
+        "name": "Large Repo and DTE",
+        "path": "/recipes/example-repos/dte",
+        "id": "dte",
         "isExternal": false,
         "children": [],
         "disableCollapsible": false
@@ -2825,14 +3084,6 @@
             "disableCollapsible": false
           },
           {
-            "name": "Deploying Next.js applications to Vercel",
-            "path": "/recipes/other/deploy-nextjs-to-vercel",
-            "id": "deploy-nextjs-to-vercel",
-            "isExternal": false,
-            "children": [],
-            "disableCollapsible": false
-          },
-          {
             "name": "Using Tailwind CSS in React",
             "path": "/recipes/other/using-tailwind-css-in-react",
             "id": "using-tailwind-css-in-react",
@@ -2873,38 +3124,6 @@
             "disableCollapsible": false
           },
           {
-            "name": "Powering Up React Development With Nx",
-            "path": "/recipes/other/react-nx",
-            "id": "react-nx",
-            "isExternal": false,
-            "children": [],
-            "disableCollapsible": false
-          },
-          {
-            "name": "Using Apollo GraphQL",
-            "path": "/recipes/other/apollo-react",
-            "id": "apollo-react",
-            "isExternal": false,
-            "children": [],
-            "disableCollapsible": false
-          },
-          {
-            "name": "Large Repo and Caching",
-            "path": "/recipes/other/caching",
-            "id": "caching",
-            "isExternal": false,
-            "children": [],
-            "disableCollapsible": false
-          },
-          {
-            "name": "Large Repo and DTE",
-            "path": "/recipes/other/dte",
-            "id": "dte",
-            "isExternal": false,
-            "children": [],
-            "disableCollapsible": false
-          },
-          {
             "name": "Find the Last Successful Commit in Azure Pipelines",
             "path": "/recipes/other/azure-last-successful-commit",
             "id": "azure-last-successful-commit",
@@ -2916,38 +3135,6 @@
             "name": "Troubleshoot Cache Misses",
             "path": "/recipes/other/troubleshoot-cache-misses",
             "id": "troubleshoot-cache-misses",
-            "isExternal": false,
-            "children": [],
-            "disableCollapsible": false
-          },
-          {
-            "name": "Ban Dependencies with Certain Tags",
-            "path": "/recipes/other/ban-dependencies-with-tags",
-            "id": "ban-dependencies-with-tags",
-            "isExternal": false,
-            "children": [],
-            "disableCollapsible": false
-          },
-          {
-            "name": "Tag in Multiple Dimensions",
-            "path": "/recipes/other/tag-multiple-dimensions",
-            "id": "tag-multiple-dimensions",
-            "isExternal": false,
-            "children": [],
-            "disableCollapsible": false
-          },
-          {
-            "name": "Ban External Imports",
-            "path": "/recipes/other/ban-external-imports",
-            "id": "ban-external-imports",
-            "isExternal": false,
-            "children": [],
-            "disableCollapsible": false
-          },
-          {
-            "name": "Tags Allow List",
-            "path": "/recipes/other/tags-allow-list",
-            "id": "tags-allow-list",
             "isExternal": false,
             "children": [],
             "disableCollapsible": false
@@ -3100,14 +3287,6 @@
         "disableCollapsible": false
       },
       {
-        "name": "Deploying Next.js applications to Vercel",
-        "path": "/recipes/other/deploy-nextjs-to-vercel",
-        "id": "deploy-nextjs-to-vercel",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
         "name": "Using Tailwind CSS in React",
         "path": "/recipes/other/using-tailwind-css-in-react",
         "id": "using-tailwind-css-in-react",
@@ -3148,38 +3327,6 @@
         "disableCollapsible": false
       },
       {
-        "name": "Powering Up React Development With Nx",
-        "path": "/recipes/other/react-nx",
-        "id": "react-nx",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
-        "name": "Using Apollo GraphQL",
-        "path": "/recipes/other/apollo-react",
-        "id": "apollo-react",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
-        "name": "Large Repo and Caching",
-        "path": "/recipes/other/caching",
-        "id": "caching",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
-        "name": "Large Repo and DTE",
-        "path": "/recipes/other/dte",
-        "id": "dte",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
         "name": "Find the Last Successful Commit in Azure Pipelines",
         "path": "/recipes/other/azure-last-successful-commit",
         "id": "azure-last-successful-commit",
@@ -3191,38 +3338,6 @@
         "name": "Troubleshoot Cache Misses",
         "path": "/recipes/other/troubleshoot-cache-misses",
         "id": "troubleshoot-cache-misses",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
-        "name": "Ban Dependencies with Certain Tags",
-        "path": "/recipes/other/ban-dependencies-with-tags",
-        "id": "ban-dependencies-with-tags",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
-        "name": "Tag in Multiple Dimensions",
-        "path": "/recipes/other/tag-multiple-dimensions",
-        "id": "tag-multiple-dimensions",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
-        "name": "Ban External Imports",
-        "path": "/recipes/other/ban-external-imports",
-        "id": "ban-external-imports",
-        "isExternal": false,
-        "children": [],
-        "disableCollapsible": false
-      },
-      {
-        "name": "Tags Allow List",
-        "path": "/recipes/other/tags-allow-list",
-        "id": "tags-allow-list",
         "isExternal": false,
         "children": [],
         "disableCollapsible": false
@@ -4808,6 +4923,14 @@
                 "children": [],
                 "isExternal": false,
                 "disableCollapsible": false
+              },
+              {
+                "id": "submit",
+                "path": "/packages/expo/executors/submit",
+                "name": "submit",
+                "children": [],
+                "isExternal": false,
+                "disableCollapsible": false
               }
             ],
             "isExternal": false,
@@ -5073,6 +5196,14 @@
                 "id": "setup-verdaccio",
                 "path": "/packages/js/generators/setup-verdaccio",
                 "name": "setup-verdaccio",
+                "children": [],
+                "isExternal": false,
+                "disableCollapsible": false
+              },
+              {
+                "id": "setup-build",
+                "path": "/packages/js/generators/setup-build",
+                "name": "setup-build",
                 "children": [],
                 "isExternal": false,
                 "disableCollapsible": false
@@ -5488,23 +5619,6 @@
                 "id": "overview",
                 "isExternal": false,
                 "children": [],
-                "disableCollapsible": false
-              }
-            ],
-            "isExternal": false,
-            "disableCollapsible": false
-          },
-          {
-            "id": "executors",
-            "path": "/packages/node/executors",
-            "name": "executors",
-            "children": [
-              {
-                "id": "node",
-                "path": "/packages/node/executors/node",
-                "name": "node",
-                "children": [],
-                "isExternal": false,
                 "disableCollapsible": false
               }
             ],

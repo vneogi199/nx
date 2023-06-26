@@ -1,11 +1,6 @@
 import 'nx/src/utils/testing/mock-fs';
 
-import type {
-  FileData,
-  ProjectFileMap,
-  ProjectGraph,
-  ProjectGraphDependency,
-} from '@nx/devkit';
+import type { FileData, ProjectFileMap, ProjectGraph } from '@nx/devkit';
 import { DependencyType } from '@nx/devkit';
 import * as parser from '@typescript-eslint/parser';
 import { TSESLint } from '@typescript-eslint/utils';
@@ -1221,20 +1216,33 @@ Violation detected in:
                 target: 'otherName',
                 type: DependencyType.dynamic,
               },
+              {
+                source: 'mylibName',
+                target: 'otherName',
+                type: DependencyType.static,
+              },
             ],
           },
         },
         {
-          mylibName: [createFile(`libs/mylib/src/main.ts`)],
+          mylibName: [
+            createFile(`libs/mylib/src/main.ts`, [
+              ['otherName', 'static'],
+              ['otherName', 'dynamic'],
+            ]),
+          ],
           otherName: [createFile(`libs/other/index.ts`)],
         }
       );
       if (importKind === 'type') {
         expect(failures.length).toEqual(0);
       } else {
-        expect(failures[0].message).toEqual(
-          'Imports of lazy-loaded libraries are forbidden'
-        );
+        expect(failures[0].message).toMatchInlineSnapshot(`
+          "Static imports of lazy-loaded libraries are forbidden.
+
+          Library "otherName" is lazy-loaded in these files:
+          - libs/mylib/src/main.ts"
+        `);
       }
     }
   );

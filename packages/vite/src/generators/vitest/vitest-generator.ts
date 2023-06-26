@@ -24,6 +24,8 @@ import {
   vitestCoverageIstanbulVersion,
 } from '../../utils/versions';
 
+import { addTsLibDependencies } from '@nx/js';
+
 export async function vitestGenerator(
   tree: Tree,
   schema: VitestGeneratorSchema
@@ -43,6 +45,7 @@ export async function vitestGenerator(
 
   const initTask = await initGenerator(tree, {
     uiFramework: schema.uiFramework,
+    testEnvironment: schema.testEnvironment,
   });
   tasks.push(initTask);
 
@@ -129,6 +132,8 @@ function updateTsConfig(
         }
       );
     }
+
+    addTsLibDependencies(tree);
   }
 }
 

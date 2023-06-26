@@ -8,9 +8,9 @@ export const reactDomVersion = '18.2.0';
 export const reactIsVersion = '18.2.0';
 export const swcLoaderVersion = '0.1.15';
 export const babelLoaderVersion = '^9.1.2';
-export const typesReactVersion = '18.0.28';
-export const typesReactDomVersion = '18.0.11';
-export const typesReactIsVersion = '17.0.3';
+export const typesReactVersion = '18.2.13';
+export const typesReactDomVersion = '18.2.6';
+export const typesReactIsVersion = '18.2.1';
 
 export const typesNodeVersion = '18.14.2';
 
@@ -19,9 +19,9 @@ export const babelPresetReactVersion = '^7.14.5';
 export const styledComponentsVersion = '5.3.6';
 export const typesStyledComponentsVersion = '5.1.26';
 
-export const emotionStyledVersion = '11.10.6';
-export const emotionReactVersion = '11.10.6';
-export const emotionBabelPlugin = '11.10.6';
+export const emotionStyledVersion = '11.11.0';
+export const emotionReactVersion = '11.11.1';
+export const emotionBabelPlugin = '11.11.0';
 
 // WARNING: This needs to be in sync with Next.js' dependency or else there might be issues.
 export const styledJsxVersion = '5.1.2';
@@ -58,7 +58,7 @@ export const moduleFederationNodeVersion = '~0.9.9';
 // style preprocessors
 export const lessVersion = '3.12.2';
 export const sassVersion = '^1.55.0';
-export const stylusVersion = '^0.55.0';
+export const stylusVersion = '^0.59.0';
 
 // rollup plugins (if needed)
 export const rollupPluginUrlVersion = '^7.0.0';

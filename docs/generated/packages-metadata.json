@@ -804,6 +804,15 @@
         "originalFilePath": "/packages/expo/src/executors/export/schema.json",
         "path": "expo/executors/export",
         "type": "executor"
+      },
+      {
+        "description": "Submit app binary to App Store and/or Play Store",
+        "file": "generated/packages/expo/executors/submit.json",
+        "hidden": false,
+        "name": "submit",
+        "originalFilePath": "/packages/expo/src/executors/submit/schema.json",
+        "path": "expo/executors/submit",
+        "type": "executor"
       }
     ],
     "generators": [
@@ -1032,6 +1041,15 @@
         "name": "setup-verdaccio",
         "originalFilePath": "/packages/js/src/generators/setup-verdaccio/schema.json",
         "path": "js/generators/setup-verdaccio",
+        "type": "generator"
+      },
+      {
+        "description": "setup-build generator",
+        "file": "generated/packages/js/generators/setup-build.json",
+        "hidden": false,
+        "name": "setup-build",
+        "originalFilePath": "/packages/js/src/generators/setup-build/schema.json",
+        "path": "js/generators/setup-build",
         "type": "generator"
       }
     ],
@@ -1415,12 +1433,12 @@
     "source": "/packages/next/src"
   },
   {
-    "description": "The Node Plugin for Nx contains generators and executors to manage Node applications within an Nx workspace.",
+    "description": "The Node Plugin for Nx contains generators to manage Node applications within an Nx workspace.",
     "documents": [
       {
         "id": "overview",
         "name": "Overview",
-        "description": "The Node Plugin for Nx contains generators and executors to manage Node applications within an Nx workspace.",
+        "description": "The Node Plugin for Nx contains generators to manage Node applications within an Nx workspace.",
         "file": "generated/packages/node/documents/overview",
         "itemList": [],
         "isExternal": false,
@@ -1429,17 +1447,7 @@
         "originalFilePath": "shared/packages/node/node-plugin"
       }
     ],
-    "executors": [
-      {
-        "description": "Execute a Node application.",
-        "file": "generated/packages/node/executors/node.json",
-        "hidden": false,
-        "name": "node",
-        "originalFilePath": "/packages/node/src/executors/node/schema.json",
-        "path": "node/executors/node",
-        "type": "executor"
-      }
-    ],
+    "executors": [],
     "generators": [
       {
         "description": "Initialize the `@nrwl/node` plugin.",

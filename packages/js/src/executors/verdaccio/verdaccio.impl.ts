@@ -1,7 +1,11 @@
 import { ExecutorContext, logger } from '@nx/devkit';
-import { removeSync, existsSync } from 'fs-extra';
+import { existsSync, rmSync } from 'fs-extra';
 import { ChildProcess, execSync, fork } from 'child_process';
+import * as detectPort from 'detect-port';
+import { join, resolve } from 'path';
+
 import { VerdaccioExecutorSchema } from './schema';
+import { major } from 'semver';
 
 let childProcess: ChildProcess;
 
@@ -22,9 +26,20 @@ export async function verdaccioExecutor(
     );
   }
 
-  if (options.clear && options.storage && existsSync(options.storage)) {
-    removeSync(options.storage);
+  if (options.storage) {
+    options.storage = resolve(context.root, options.storage);
+    if (options.clear && existsSync(options.storage)) {
+      rmSync(options.storage, { recursive: true, force: true });
+      console.log(`Cleared local registry storage folder ${options.storage}`);
+    }
   }
+
+  const port = await detectPort(options.port);
+  if (port !== options.port) {
+    logger.info(`Port ${options.port} was occupied. Using port ${port}.`);
+    options.port = port;
+  }
+
   const cleanupFunctions =
     options.location === 'none' ? [] : [setupNpm(options), setupYarn(options)];
 
@@ -42,48 +57,43 @@ export async function verdaccioExecutor(
   process.on('SIGHUP', processExitListener);
 
   try {
-    await startVerdaccio(options);
+    await startVerdaccio(options, context.root);
   } catch (e) {
-    logger.error('Failed to start verdaccio: ' + e.toString());
+    logger.error('Failed to start verdaccio: ' + e?.toString());
     return {
       success: false,
+      port: options.port,
     };
   }
   return {
     success: true,
+    port: options.port,
   };
 }
 
 /**
  * Fork the verdaccio process: https://verdaccio.org/docs/verdaccio-programmatically/#using-fork-from-child_process-module
  */
-function startVerdaccio(options: VerdaccioExecutorSchema) {
+function startVerdaccio(
+  options: VerdaccioExecutorSchema,
+  workspaceRoot: string
+) {
   return new Promise((resolve, reject) => {
     childProcess = fork(
       require.resolve('verdaccio/bin/verdaccio'),
-      createVerdaccioOptions(options),
+      createVerdaccioOptions(options, workspaceRoot),
       {
         env: {
           ...process.env,
           VERDACCIO_HANDLE_KILL_SIGNALS: 'true',
+          ...(options.storage
+            ? { VERDACCIO_STORAGE_PATH: options.storage }
+            : {}),
         },
-        stdio: ['inherit', 'pipe', 'pipe', 'ipc'],
+        stdio: 'inherit',
       }
     );
 
-    childProcess.stdout.on('data', (data) => {
-      process.stdout.write(data);
-    });
-    childProcess.stderr.on('data', (data) => {
-      if (
-        data.includes('VerdaccioWarning') ||
-        data.includes('DeprecationWarning')
-      ) {
-        process.stdout.write(data);
-      } else {
-        reject(data);
-      }
-    });
     childProcess.on('error', (err) => {
       reject(err);
     });
@@ -100,13 +110,16 @@ function startVerdaccio(options: VerdaccioExecutorSchema) {
   });
 }
 
-function createVerdaccioOptions(options: VerdaccioExecutorSchema) {
+function createVerdaccioOptions(
+  options: VerdaccioExecutorSchema,
+  workspaceRoot: string
+) {
   const verdaccioArgs: string[] = [];
   if (options.port) {
     verdaccioArgs.push('--listen', options.port.toString());
   }
   if (options.config) {
-    verdaccioArgs.push('--config', options.config);
+    verdaccioArgs.push('--config', join(workspaceRoot, options.config));
   }
   return verdaccioArgs;
 }
@@ -158,39 +171,114 @@ function setupNpm(options: VerdaccioExecutorSchema) {
   };
 }
 
+function getYarnUnsafeHttpWhitelist(isYarnV1: boolean) {
+  return !isYarnV1
+    ? new Set<string>(
+        JSON.parse(
+          execSync(`yarn config get unsafeHttpWhitelist --json`).toString()
+        )
+      )
+    : null;
+}
+
+function setYarnUnsafeHttpWhitelist(
+  currentWhitelist: Set<string>,
+  options: VerdaccioExecutorSchema
+) {
+  if (currentWhitelist.size > 1) {
+    execSync(
+      `yarn config set unsafeHttpWhitelist --json '${JSON.stringify(
+        Array.from(currentWhitelist)
+      )}'` + (options.location === 'user' ? ' --home' : '')
+    );
+  } else {
+    execSync(
+      `yarn config unset unsafeHttpWhitelist` +
+        (options.location === 'user' ? ' --home' : '')
+    );
+  }
+}
+
 function setupYarn(options: VerdaccioExecutorSchema) {
+  let isYarnV1;
+
   try {
-    execSync('yarn --version');
-  } catch (e) {
+    isYarnV1 = major(execSync('yarn --version').toString().trim()) === 1;
+  } catch {
+    // This would fail if yarn is not installed which is okay
     return () => {};
   }
-
-  let yarnRegistryPath;
   try {
-    yarnRegistryPath = execSync(`yarn config get registry`)
+    const registryConfigName = isYarnV1 ? 'registry' : 'npmRegistryServer';
+
+    const yarnRegistryPath = execSync(`yarn config get ${registryConfigName}`)
       ?.toString()
       ?.trim()
       ?.replace('\u001b[2K\u001b[1G', ''); // strip out ansi codes
-    execSync(`yarn config set registry http://localhost:${options.port}/`);
+
+    execSync(
+      `yarn config set ${registryConfigName} http://localhost:${options.port}/` +
+        (options.location === 'user' ? ' --home' : '')
+    );
+
     logger.info(`Set yarn registry to http://localhost:${options.port}/`);
+
+    const currentWhitelist: Set<string> | null =
+      getYarnUnsafeHttpWhitelist(isYarnV1);
+
+    let whitelistedLocalhost = false;
+
+    if (!isYarnV1 && !currentWhitelist.has('localhost')) {
+      whitelistedLocalhost = true;
+      currentWhitelist.add('localhost');
+
+      setYarnUnsafeHttpWhitelist(currentWhitelist, options);
+      logger.info(
+        `Whitelisted http://localhost:${options.port}/ as an unsafe http server`
+      );
+    }
+
+    return () => {
+      try {
+        if (yarnRegistryPath) {
+          execSync(
+            `yarn config set ${registryConfigName} ${yarnRegistryPath}` +
+              (options.location === 'user' ? ' --home' : '')
+          );
+          logger.info(
+            `Reset yarn ${registryConfigName} to ${yarnRegistryPath}`
+          );
+        } else {
+          execSync(
+            `yarn config ${
+              isYarnV1 ? 'delete' : 'unset'
+            } ${registryConfigName}` +
+              (options.location === 'user' ? ' --home' : '')
+          );
+        }
+
+        if (whitelistedLocalhost) {
+          const currentWhitelist: Set<string> =
+            getYarnUnsafeHttpWhitelist(isYarnV1);
+
+          if (currentWhitelist.has('localhost')) {
+            currentWhitelist.delete('localhost');
+
+            setYarnUnsafeHttpWhitelist(currentWhitelist, options);
+            logger.info(
+              `Removed http://localhost:${options.port}/ as an unsafe http server`
+            );
+          }
+        }
+      } catch (e) {
+        throw new Error(`Failed to reset yarn registry: ${e.message}`);
+      }
+    };
   } catch (e) {
     throw new Error(
       `Failed to set yarn registry to http://localhost:${options.port}/: ${e.message}`
     );
   }
-
-  return () => {
-    try {
-      if (yarnRegistryPath) {
-        execSync(`yarn config set registry ${yarnRegistryPath}`);
-        logger.info(`Reset yarn registry to ${yarnRegistryPath}`);
-      } else {
-        execSync(`yarn config delete registry`);
-      }
-    } catch (e) {
-      throw new Error(`Failed to reset yarn registry: ${e.message}`);
-    }
-  };
 }
 
 export default verdaccioExecutor;

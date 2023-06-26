@@ -22,6 +22,7 @@ import {
 
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
+
 type ViteDevServer = {
   framework: 'react';
   bundler: 'vite';
@@ -33,6 +34,7 @@ type WebpackDevServer = {
   bundler: 'webpack';
   webpackConfig?: any;
 };
+
 /**
  * React nx preset for Cypress Component Testing
  *
@@ -68,9 +70,13 @@ export function nxComponentTestingPreset(
     ? pathToConfig
     : dirname(pathToConfig);
 
+  const basePresetSettings = nxBaseCypressPreset(pathToConfig, {
+    testingType: 'component',
+  });
+
   if (options?.bundler === 'vite') {
     return {
-      ...nxBaseCypressPreset(pathToConfig),
+      ...basePresetSettings,
       specPattern: 'src/**/*.cy.{js,jsx,ts,tsx}',
       devServer: {
         ...({ framework: 'react', bundler: 'vite' } as const),
@@ -78,7 +84,7 @@ export function nxComponentTestingPreset(
           const viteConfigPath = findViteConfig(normalizedProjectRootPath);
 
           const { mergeConfig, loadConfigFromFile, searchForWorkspaceRoot } =
-            (await import('vite')) as typeof import('vite');
+            await import('vite');
 
           const resolved = await loadConfigFromFile(
             {
@@ -154,7 +160,7 @@ export function nxComponentTestingPreset(
   }
 
   return {
-    ...nxBaseCypressPreset(pathToConfig),
+    ...basePresetSettings,
     specPattern: 'src/**/*.cy.{js,jsx,ts,tsx}',
     devServer: {
       // cypress uses string union type,
@@ -250,6 +256,10 @@ function buildTargetWebpack(
     // TODO(jack): Once webpackConfig is always set in @nx/webpack:webpack, we no longer need this default.
     const defaultWebpack = getWebpackConfig(context, {
       ...options,
+      // cypress will generate its own index.html from component-index.html
+      generateIndexHtml: false,
+      // causes issues with buildable libraries with ENOENT: no such file or directory, scandir error
+      extractLicenses: false,
       root: workspaceRoot,
       projectRoot: ctProjectConfig.root,
       sourceRoot: ctProjectConfig.sourceRoot,
@@ -262,6 +272,7 @@ function buildTargetWebpack(
         configuration: parsed.configuration,
       });
     }
+
     return defaultWebpack;
   };
 }

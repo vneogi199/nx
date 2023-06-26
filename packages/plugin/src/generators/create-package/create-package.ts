@@ -11,14 +11,17 @@ import {
   GeneratorCallback,
   runTasksInSerial,
   joinPathFragments,
+  getProjects,
+  detectPackageManager,
+  getPackageManagerCommand,
 } from '@nx/devkit';
 import { libraryGenerator as jsLibraryGenerator } from '@nx/js';
 import { nxVersion } from 'nx/src/utils/versions';
 import generatorGenerator from '../generator/generator';
 import { CreatePackageSchema } from './schema';
 import { NormalizedSchema, normalizeSchema } from './utils/normalize-schema';
-import e2eProjectGenerator from '../e2e-project/e2e';
 import { hasGenerator } from '../../utils/has-generator';
+import { join } from 'path';
 
 export async function createPackageGenerator(
   host: Tree,
@@ -39,6 +42,9 @@ export async function createPackageGenerator(
   tasks.push(installTask);
 
   await createCliPackage(host, options, pluginPackageName);
+  if (options.e2eProject) {
+    addE2eProject(host, options);
+  }
 
   if (!options.skipFormat) {
     await formatFiles(host);
@@ -149,57 +155,29 @@ async function createCliPackage(
  * @param options
  * @returns
  */
-async function addE2eProject(host: Tree, options: NormalizedSchema) {
-  const pluginProjectConfiguration = readProjectConfiguration(
-    host,
-    options.project
-  );
-  const pluginOutputPath =
-    pluginProjectConfiguration.targets.build.options.outputPath;
-
-  const cliProjectConfiguration = readProjectConfiguration(
-    host,
-    options.projectName
-  );
-  const cliOutputPath =
-    cliProjectConfiguration.targets.build.options.outputPath;
-
-  const e2eTask = await e2eProjectGenerator(host, {
-    pluginName: options.projectName,
-    projectDirectory: options.projectDirectory,
-    pluginOutputPath,
-    npmPackageName: options.name,
-    skipFormat: true,
-    rootProject: false,
-  });
-
+function addE2eProject(host: Tree, options: NormalizedSchema) {
   const e2eProjectConfiguration = readProjectConfiguration(
     host,
-    `${options.projectName}-e2e`
+    options.e2eProject
   );
-  e2eProjectConfiguration.targets.e2e.dependsOn = ['^build'];
-  updateProjectConfiguration(
+  const projectConfiguration = readProjectConfiguration(host, options.project);
+  const { name: pluginPackageName } = readJson(
     host,
-    e2eProjectConfiguration.name,
-    e2eProjectConfiguration
+    join(projectConfiguration.root, 'package.json')
   );
-
-  // delete the default e2e test file
-  host.delete(e2eProjectConfiguration.sourceRoot);
 
   generateFiles(
     host,
     joinPathFragments(__dirname, './files/e2e'),
     e2eProjectConfiguration.sourceRoot,
     {
-      ...options,
-      pluginOutputPath,
-      cliOutputPath,
+      pluginName: options.project,
+      cliName: options.name,
+      packageManagerCommands: getPackageManagerCommand('npm'),
+      pluginPackageName,
       tmpl: '',
     }
   );
-
-  return e2eTask;
 }
 
 export default createPackageGenerator;

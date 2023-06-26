@@ -166,7 +166,7 @@ To be safe, Nx assumes that updating any external dependency invalidates the cac
 
 > Note: Community plugins are also treated like `nx:run-commands`
 
-This input type allows for you to override this cautious behavior by specifying a set of external dependencies to hash for the target.
+This input type allows you to override this cautious behavior by specifying a set of external dependencies to hash for the target.
 
 Examples:
 
@@ -181,16 +181,13 @@ Targets that only use commands natively available in the terminal will not depen
           "externalDependencies": []
         }
       ],
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "cp src/assets dist"
-      }
+      "command": "cp src/assets dist"
     }
   }
 }
 ```
 
-If a target uses a command from a npm package, that package should be listed.
+If a target uses a command from an npm package, that package should be listed.
 
 ```json
 {
@@ -201,10 +198,30 @@ If a target uses a command from a npm package, that package should be listed.
           "externalDependencies": ["lerna"]
         }
       ],
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npx lerna publish"
-      }
+      "command": "npx lerna publish"
+    }
+  }
+}
+```
+
+_Dependent tasks output_
+
+This input allows us to depend on the output, rather than the input of the dependent tasks. We can specify the glob pattern to match only the subset of the output files.
+The `transitive` parameter defines whether the check and the pattern should be recursively applied to the dependent tasks of the child tasks.
+
+Examples:
+
+```json
+{
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "production": ["default", "!{projectRoot}/**/*.spec.ts"],
+    "deps": [{ "dependentTasksOutputFiles": "**/*.d.ts", "transitive": true }]
+  },
+  "targetDefaults": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["production", "deps"]
     }
   }
 }

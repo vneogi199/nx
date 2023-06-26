@@ -21,11 +21,14 @@ describe('cache', () => {
     const myapp2 = uniq('myapp2');
     runCLI(`generate @nx/web:app ${myapp1}`);
     runCLI(`generate @nx/web:app ${myapp2}`);
-    const files = `--files="apps/${myapp1}/src/main.ts,apps/${myapp2}/src/main.ts"`;
 
     // run build with caching
     // --------------------------------------------
-    const outputThatPutsDataIntoCache = runCLI(`affected:build ${files}`);
+    const buildAppsCommand = `run-many --target build --projects ${[
+      myapp1,
+      myapp2,
+    ].join()}`;
+    const outputThatPutsDataIntoCache = runCLI(buildAppsCommand);
     const filesApp1 = listFiles(`dist/apps/${myapp1}`);
     const filesApp2 = listFiles(`dist/apps/${myapp2}`);
     // now the data is in cache
@@ -35,7 +38,7 @@ describe('cache', () => {
 
     rmDist();
 
-    const outputWithBothBuildTasksCached = runCLI(`affected:build ${files}`);
+    const outputWithBothBuildTasksCached = runCLI(buildAppsCommand);
     expect(outputWithBothBuildTasksCached).toContain(
       'read the output from the cache'
     );
@@ -45,7 +48,7 @@ describe('cache', () => {
 
     // run with skipping cache
     const outputWithBothBuildTasksCachedButSkipped = runCLI(
-      `affected:build ${files} --skip-nx-cache`
+      buildAppsCommand + ' --skip-nx-cache'
     );
     expect(outputWithBothBuildTasksCachedButSkipped).not.toContain(
       `read the output from the cache`
@@ -56,7 +59,7 @@ describe('cache', () => {
     updateFile(`apps/${myapp1}/src/main.ts`, (c) => {
       return `${c}\n//some comment`;
     });
-    const outputWithBuildApp2Cached = runCLI(`affected:build ${files}`);
+    const outputWithBuildApp2Cached = runCLI(buildAppsCommand);
     expect(outputWithBuildApp2Cached).toContain(
       'read the output from the cache'
     );
@@ -75,7 +78,7 @@ describe('cache', () => {
       r.affected = { defaultBase: 'different' };
       return JSON.stringify(r);
     });
-    const outputWithNoBuildCached = runCLI(`affected:build ${files}`);
+    const outputWithNoBuildCached = runCLI(buildAppsCommand);
     expect(outputWithNoBuildCached).not.toContain(
       'read the output from the cache'
     );
@@ -92,12 +95,18 @@ describe('cache', () => {
 
     // run lint with caching
     // --------------------------------------------
-    const outputWithNoLintCached = runCLI(`affected:lint ${files}`);
+    let lintAppsCommand = `run-many --target lint --projects ${[
+      myapp1,
+      myapp2,
+      `${myapp1}-e2e`,
+      `${myapp2}-e2e`,
+    ].join()}`;
+    const outputWithNoLintCached = runCLI(lintAppsCommand);
     expect(outputWithNoLintCached).not.toContain(
       'read the output from the cache'
     );
 
-    const outputWithBothLintTasksCached = runCLI(`affected:lint ${files}`);
+    const outputWithBothLintTasksCached = runCLI(lintAppsCommand);
     expect(outputWithBothLintTasksCached).toContain(
       'read the output from the cache'
     );
@@ -126,13 +135,13 @@ describe('cache', () => {
       return JSON.stringify(nxJson, null, 2);
     });
 
-    const outputWithoutCachingEnabled1 = runCLI(`affected:build ${files}`);
+    const outputWithoutCachingEnabled1 = runCLI(buildAppsCommand);
 
     expect(outputWithoutCachingEnabled1).not.toContain(
       'read the output from the cache'
     );
 
-    const outputWithoutCachingEnabled2 = runCLI(`affected:build ${files}`);
+    const outputWithoutCachingEnabled2 = runCLI(buildAppsCommand);
     expect(outputWithoutCachingEnabled2).not.toContain(
       'read the output from the cache'
     );
@@ -278,6 +287,54 @@ describe('cache', () => {
     expect(parentRunSpecChangeChild1).not.toContain(
       'read the output from the cache'
     );
+  }, 120000);
+
+  it('should support ENV as an input', () => {
+    const lib = uniq('lib');
+    runCLI(`generate @nx/js:lib ${lib}`);
+    updateJson(`nx.json`, (c) => {
+      c.tasksRunnerOptions.default.options.cacheableOperations.push('echo');
+      c.targetDefaults = {
+        echo: {
+          inputs: [
+            {
+              env: 'NAME',
+            },
+          ],
+        },
+      };
+
+      return c;
+    });
+
+    updateJson(`libs/${lib}/project.json`, (c) => {
+      c.targets = {
+        echo: {
+          command: 'echo $NAME',
+        },
+      };
+      return c;
+    });
+
+    const firstRun = runCLI(`echo ${lib}`, {
+      env: { NAME: 'e2e' },
+    });
+    expect(firstRun).not.toContain('read the output from the cache');
+
+    const secondRun = runCLI(`echo ${lib}`, {
+      env: { NAME: 'e2e' },
+    });
+    expect(secondRun).toContain('read the output from the cache');
+
+    const thirdRun = runCLI(`echo ${lib}`, {
+      env: { NAME: 'change' },
+    });
+    expect(thirdRun).not.toContain('read the output from the cache');
+
+    const fourthRun = runCLI(`echo ${lib}`, {
+      env: { NAME: 'change' },
+    });
+    expect(fourthRun).toContain('read the output from the cache');
   }, 120000);
 
   function expectCached(

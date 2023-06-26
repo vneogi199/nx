@@ -953,6 +953,16 @@
         "isExternal": false,
         "path": "/recipes/deployment/deno-netlify-functions",
         "tags": ["deployment", "deno"]
+      },
+      {
+        "id": "deploy-nextjs-to-vercel",
+        "name": "Deploying Next.js applications to Vercel",
+        "description": "",
+        "file": "shared/recipes/deployment/deploy-nextjs-to-vercel",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/deployment/deploy-nextjs-to-vercel",
+        "tags": []
       }
     ],
     "isExternal": false,
@@ -1008,6 +1018,309 @@
     "isExternal": false,
     "path": "/recipes/deployment/deno-netlify-functions",
     "tags": ["deployment", "deno"]
+  },
+  "/recipes/deployment/deploy-nextjs-to-vercel": {
+    "id": "deploy-nextjs-to-vercel",
+    "name": "Deploying Next.js applications to Vercel",
+    "description": "",
+    "file": "shared/recipes/deployment/deploy-nextjs-to-vercel",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/deployment/deploy-nextjs-to-vercel",
+    "tags": []
+  },
+  "/recipes/database": {
+    "id": "database",
+    "name": "Database",
+    "description": "Recipes for using various databases in node apps.",
+    "file": "",
+    "itemList": [
+      {
+        "id": "nestjs-prisma",
+        "name": "Using Prisma with NestJS",
+        "description": "",
+        "file": "shared/recipes/database/nestjs-prisma",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/database/nestjs-prisma",
+        "tags": ["database", "node"]
+      },
+      {
+        "id": "mongo-fastify",
+        "name": "Using Mongo with Fastify",
+        "description": "",
+        "file": "shared/recipes/database/mongo-fastify",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/database/mongo-fastify",
+        "tags": ["database", "node"]
+      },
+      {
+        "id": "redis-fastify",
+        "name": "Using Redis with Fastify",
+        "description": "",
+        "file": "shared/recipes/database/redis-fastify",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/database/redis-fastify",
+        "tags": ["database", "node"]
+      },
+      {
+        "id": "postgres-fastify",
+        "name": "Using Postgres with Fastify",
+        "description": "",
+        "file": "shared/recipes/database/postgres-fastify",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/database/postgres-fastify",
+        "tags": ["database", "node"]
+      },
+      {
+        "id": "serverless-fastify-planetscale",
+        "name": "Using PlanetScale with Serverless Fastify",
+        "description": "",
+        "file": "shared/recipes/database/serverless-fastify-planetscale",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/database/serverless-fastify-planetscale",
+        "tags": ["database", "node", "serverless"]
+      }
+    ],
+    "isExternal": false,
+    "path": "/recipes/database",
+    "tags": []
+  },
+  "/recipes/database/nestjs-prisma": {
+    "id": "nestjs-prisma",
+    "name": "Using Prisma with NestJS",
+    "description": "",
+    "file": "shared/recipes/database/nestjs-prisma",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/database/nestjs-prisma",
+    "tags": ["database", "node"]
+  },
+  "/recipes/database/mongo-fastify": {
+    "id": "mongo-fastify",
+    "name": "Using Mongo with Fastify",
+    "description": "",
+    "file": "shared/recipes/database/mongo-fastify",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/database/mongo-fastify",
+    "tags": ["database", "node"]
+  },
+  "/recipes/database/redis-fastify": {
+    "id": "redis-fastify",
+    "name": "Using Redis with Fastify",
+    "description": "",
+    "file": "shared/recipes/database/redis-fastify",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/database/redis-fastify",
+    "tags": ["database", "node"]
+  },
+  "/recipes/database/postgres-fastify": {
+    "id": "postgres-fastify",
+    "name": "Using Postgres with Fastify",
+    "description": "",
+    "file": "shared/recipes/database/postgres-fastify",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/database/postgres-fastify",
+    "tags": ["database", "node"]
+  },
+  "/recipes/database/serverless-fastify-planetscale": {
+    "id": "serverless-fastify-planetscale",
+    "name": "Using PlanetScale with Serverless Fastify",
+    "description": "",
+    "file": "shared/recipes/database/serverless-fastify-planetscale",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/database/serverless-fastify-planetscale",
+    "tags": ["database", "node", "serverless"]
+  },
+  "/recipes/enforce-module-boundaries": {
+    "id": "enforce-module-boundaries",
+    "name": "Enforce Module Boundaries",
+    "description": "Configuring the enforce module boundaries rule",
+    "file": "",
+    "itemList": [
+      {
+        "id": "ban-dependencies-with-tags",
+        "name": "Ban Dependencies with Certain Tags",
+        "description": "",
+        "file": "shared/recipes/ban-dependencies-with-tags",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/enforce-module-boundaries/ban-dependencies-with-tags",
+        "tags": ["enforce-project-boundaries"]
+      },
+      {
+        "id": "tag-multiple-dimensions",
+        "name": "Tag in Multiple Dimensions",
+        "description": "",
+        "file": "shared/recipes/tag-multiple-dimensions",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/enforce-module-boundaries/tag-multiple-dimensions",
+        "tags": ["enforce-project-boundaries"]
+      },
+      {
+        "id": "ban-external-imports",
+        "name": "Ban External Imports",
+        "description": "",
+        "file": "shared/recipes/ban-external-imports",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/enforce-module-boundaries/ban-external-imports",
+        "tags": ["enforce-project-boundaries"]
+      },
+      {
+        "id": "tags-allow-list",
+        "name": "Tags Allow List",
+        "description": "",
+        "file": "shared/recipes/tags-allow-list",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/enforce-module-boundaries/tags-allow-list",
+        "tags": ["enforce-project-boundaries"]
+      }
+    ],
+    "isExternal": false,
+    "path": "/recipes/enforce-module-boundaries",
+    "tags": []
+  },
+  "/recipes/enforce-module-boundaries/ban-dependencies-with-tags": {
+    "id": "ban-dependencies-with-tags",
+    "name": "Ban Dependencies with Certain Tags",
+    "description": "",
+    "file": "shared/recipes/ban-dependencies-with-tags",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/enforce-module-boundaries/ban-dependencies-with-tags",
+    "tags": ["enforce-project-boundaries"]
+  },
+  "/recipes/enforce-module-boundaries/tag-multiple-dimensions": {
+    "id": "tag-multiple-dimensions",
+    "name": "Tag in Multiple Dimensions",
+    "description": "",
+    "file": "shared/recipes/tag-multiple-dimensions",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/enforce-module-boundaries/tag-multiple-dimensions",
+    "tags": ["enforce-project-boundaries"]
+  },
+  "/recipes/enforce-module-boundaries/ban-external-imports": {
+    "id": "ban-external-imports",
+    "name": "Ban External Imports",
+    "description": "",
+    "file": "shared/recipes/ban-external-imports",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/enforce-module-boundaries/ban-external-imports",
+    "tags": ["enforce-project-boundaries"]
+  },
+  "/recipes/enforce-module-boundaries/tags-allow-list": {
+    "id": "tags-allow-list",
+    "name": "Tags Allow List",
+    "description": "",
+    "file": "shared/recipes/tags-allow-list",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/enforce-module-boundaries/tags-allow-list",
+    "tags": ["enforce-project-boundaries"]
+  },
+  "/recipes/example-repos": {
+    "id": "example-repos",
+    "name": "Example Repos",
+    "description": "Examples of different ways to use Nx",
+    "file": "",
+    "itemList": [
+      {
+        "id": "react-nx",
+        "name": "Powering Up React Development With Nx",
+        "description": "",
+        "file": "shared/examples/react-nx",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/example-repos/react-nx",
+        "tags": []
+      },
+      {
+        "id": "apollo-react",
+        "name": "Using Apollo GraphQL",
+        "description": "",
+        "file": "shared/examples/apollo-react",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/example-repos/apollo-react",
+        "tags": []
+      },
+      {
+        "id": "caching",
+        "name": "Large Repo and Caching",
+        "description": "",
+        "file": "shared/examples/caching",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/example-repos/caching",
+        "tags": []
+      },
+      {
+        "id": "dte",
+        "name": "Large Repo and DTE",
+        "description": "",
+        "file": "shared/examples/dte",
+        "itemList": [],
+        "isExternal": false,
+        "path": "/recipes/example-repos/dte",
+        "tags": []
+      }
+    ],
+    "isExternal": false,
+    "path": "/recipes/example-repos",
+    "tags": []
+  },
+  "/recipes/example-repos/react-nx": {
+    "id": "react-nx",
+    "name": "Powering Up React Development With Nx",
+    "description": "",
+    "file": "shared/examples/react-nx",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/example-repos/react-nx",
+    "tags": []
+  },
+  "/recipes/example-repos/apollo-react": {
+    "id": "apollo-react",
+    "name": "Using Apollo GraphQL",
+    "description": "",
+    "file": "shared/examples/apollo-react",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/example-repos/apollo-react",
+    "tags": []
+  },
+  "/recipes/example-repos/caching": {
+    "id": "caching",
+    "name": "Large Repo and Caching",
+    "description": "",
+    "file": "shared/examples/caching",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/example-repos/caching",
+    "tags": []
+  },
+  "/recipes/example-repos/dte": {
+    "id": "dte",
+    "name": "Large Repo and DTE",
+    "description": "",
+    "file": "shared/examples/dte",
+    "itemList": [],
+    "isExternal": false,
+    "path": "/recipes/example-repos/dte",
+    "tags": []
   },
   "/recipes/other": {
     "id": "other",
@@ -1126,16 +1439,6 @@
         "tags": []
       },
       {
-        "id": "deploy-nextjs-to-vercel",
-        "name": "Deploying Next.js applications to Vercel",
-        "description": "",
-        "file": "shared/guides/deploy-nextjs-to-vercel",
-        "itemList": [],
-        "isExternal": false,
-        "path": "/recipes/other/deploy-nextjs-to-vercel",
-        "tags": []
-      },
-      {
         "id": "using-tailwind-css-in-react",
         "name": "Using Tailwind CSS in React",
         "description": "",
@@ -1186,46 +1489,6 @@
         "tags": []
       },
       {
-        "id": "react-nx",
-        "name": "Powering Up React Development With Nx",
-        "description": "",
-        "file": "shared/examples/react-nx",
-        "itemList": [],
-        "isExternal": false,
-        "path": "/recipes/other/react-nx",
-        "tags": []
-      },
-      {
-        "id": "apollo-react",
-        "name": "Using Apollo GraphQL",
-        "description": "",
-        "file": "shared/examples/apollo-react",
-        "itemList": [],
-        "isExternal": false,
-        "path": "/recipes/other/apollo-react",
-        "tags": []
-      },
-      {
-        "id": "caching",
-        "name": "Large Repo and Caching",
-        "description": "",
-        "file": "shared/examples/caching",
-        "itemList": [],
-        "isExternal": false,
-        "path": "/recipes/other/caching",
-        "tags": []
-      },
-      {
-        "id": "dte",
-        "name": "Large Repo and DTE",
-        "description": "",
-        "file": "shared/examples/dte",
-        "itemList": [],
-        "isExternal": false,
-        "path": "/recipes/other/dte",
-        "tags": []
-      },
-      {
         "id": "azure-last-successful-commit",
         "name": "Find the Last Successful Commit in Azure Pipelines",
         "description": "",
@@ -1244,46 +1507,6 @@
         "isExternal": false,
         "path": "/recipes/other/troubleshoot-cache-misses",
         "tags": ["cache-task-results"]
-      },
-      {
-        "id": "ban-dependencies-with-tags",
-        "name": "Ban Dependencies with Certain Tags",
-        "description": "",
-        "file": "shared/recipes/ban-dependencies-with-tags",
-        "itemList": [],
-        "isExternal": false,
-        "path": "/recipes/other/ban-dependencies-with-tags",
-        "tags": ["enforce-project-boundaries"]
-      },
-      {
-        "id": "tag-multiple-dimensions",
-        "name": "Tag in Multiple Dimensions",
-        "description": "",
-        "file": "shared/recipes/tag-multiple-dimensions",
-        "itemList": [],
-        "isExternal": false,
-        "path": "/recipes/other/tag-multiple-dimensions",
-        "tags": ["enforce-project-boundaries"]
-      },
-      {
-        "id": "ban-external-imports",
-        "name": "Ban External Imports",
-        "description": "",
-        "file": "shared/recipes/ban-external-imports",
-        "itemList": [],
-        "isExternal": false,
-        "path": "/recipes/other/ban-external-imports",
-        "tags": ["enforce-project-boundaries"]
-      },
-      {
-        "id": "tags-allow-list",
-        "name": "Tags Allow List",
-        "description": "",
-        "file": "shared/recipes/tags-allow-list",
-        "itemList": [],
-        "isExternal": false,
-        "path": "/recipes/other/tags-allow-list",
-        "tags": ["enforce-project-boundaries"]
       },
       {
         "id": "export-project-graph",
@@ -1470,16 +1693,6 @@
     "path": "/recipes/other/browser-support",
     "tags": []
   },
-  "/recipes/other/deploy-nextjs-to-vercel": {
-    "id": "deploy-nextjs-to-vercel",
-    "name": "Deploying Next.js applications to Vercel",
-    "description": "",
-    "file": "shared/guides/deploy-nextjs-to-vercel",
-    "itemList": [],
-    "isExternal": false,
-    "path": "/recipes/other/deploy-nextjs-to-vercel",
-    "tags": []
-  },
   "/recipes/other/using-tailwind-css-in-react": {
     "id": "using-tailwind-css-in-react",
     "name": "Using Tailwind CSS in React",
@@ -1530,46 +1743,6 @@
     "path": "/recipes/other/misc-data-persistence",
     "tags": []
   },
-  "/recipes/other/react-nx": {
-    "id": "react-nx",
-    "name": "Powering Up React Development With Nx",
-    "description": "",
-    "file": "shared/examples/react-nx",
-    "itemList": [],
-    "isExternal": false,
-    "path": "/recipes/other/react-nx",
-    "tags": []
-  },
-  "/recipes/other/apollo-react": {
-    "id": "apollo-react",
-    "name": "Using Apollo GraphQL",
-    "description": "",
-    "file": "shared/examples/apollo-react",
-    "itemList": [],
-    "isExternal": false,
-    "path": "/recipes/other/apollo-react",
-    "tags": []
-  },
-  "/recipes/other/caching": {
-    "id": "caching",
-    "name": "Large Repo and Caching",
-    "description": "",
-    "file": "shared/examples/caching",
-    "itemList": [],
-    "isExternal": false,
-    "path": "/recipes/other/caching",
-    "tags": []
-  },
-  "/recipes/other/dte": {
-    "id": "dte",
-    "name": "Large Repo and DTE",
-    "description": "",
-    "file": "shared/examples/dte",
-    "itemList": [],
-    "isExternal": false,
-    "path": "/recipes/other/dte",
-    "tags": []
-  },
   "/recipes/other/azure-last-successful-commit": {
     "id": "azure-last-successful-commit",
     "name": "Find the Last Successful Commit in Azure Pipelines",
@@ -1589,46 +1762,6 @@
     "isExternal": false,
     "path": "/recipes/other/troubleshoot-cache-misses",
     "tags": ["cache-task-results"]
-  },
-  "/recipes/other/ban-dependencies-with-tags": {
-    "id": "ban-dependencies-with-tags",
-    "name": "Ban Dependencies with Certain Tags",
-    "description": "",
-    "file": "shared/recipes/ban-dependencies-with-tags",
-    "itemList": [],
-    "isExternal": false,
-    "path": "/recipes/other/ban-dependencies-with-tags",
-    "tags": ["enforce-project-boundaries"]
-  },
-  "/recipes/other/tag-multiple-dimensions": {
-    "id": "tag-multiple-dimensions",
-    "name": "Tag in Multiple Dimensions",
-    "description": "",
-    "file": "shared/recipes/tag-multiple-dimensions",
-    "itemList": [],
-    "isExternal": false,
-    "path": "/recipes/other/tag-multiple-dimensions",
-    "tags": ["enforce-project-boundaries"]
-  },
-  "/recipes/other/ban-external-imports": {
-    "id": "ban-external-imports",
-    "name": "Ban External Imports",
-    "description": "",
-    "file": "shared/recipes/ban-external-imports",
-    "itemList": [],
-    "isExternal": false,
-    "path": "/recipes/other/ban-external-imports",
-    "tags": ["enforce-project-boundaries"]
-  },
-  "/recipes/other/tags-allow-list": {
-    "id": "tags-allow-list",
-    "name": "Tags Allow List",
-    "description": "",
-    "file": "shared/recipes/tags-allow-list",
-    "itemList": [],
-    "isExternal": false,
-    "path": "/recipes/other/tags-allow-list",
-    "tags": ["enforce-project-boundaries"]
   },
   "/recipes/other/export-project-graph": {
     "id": "export-project-graph",

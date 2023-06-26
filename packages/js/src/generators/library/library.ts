@@ -88,13 +88,10 @@ export async function projectGenerator(
       includeVitest: options.unitTestRunner === 'vitest',
       includeLib: true,
       skipFormat: true,
+      testEnvironment: options.testEnvironment,
     });
     tasks.push(viteTask);
   }
-  if (options.bundler === 'rollup') {
-    ensureBabelRootConfigExists(tree);
-  }
-
   if (options.linter !== 'none') {
     const lintCallback = await addLint(tree, options);
     tasks.push(lintCallback);
@@ -116,6 +113,7 @@ export async function projectGenerator(
       uiFramework: 'none',
       coverageProvider: 'c8',
       skipFormat: true,
+      testEnvironment: options.testEnvironment,
     });
     tasks.push(vitestTask);
   }
@@ -581,14 +579,6 @@ function getBuildExecutor(bundler: Bundler) {
     default:
       return undefined;
   }
-}
-
-function ensureBabelRootConfigExists(tree: Tree) {
-  if (tree.exists('babel.config.json')) return;
-
-  writeJson(tree, 'babel.config.json', {
-    babelrcRoots: ['*'],
-  });
 }
 
 function getOutputPath(options: NormalizedSchema, destinationDir?: string) {

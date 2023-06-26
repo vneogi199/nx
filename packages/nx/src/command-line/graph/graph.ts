@@ -18,7 +18,10 @@ import {
 } from '../../config/project-graph';
 import { pruneExternalNodes } from '../../project-graph/operators';
 import { createProjectGraphAsync } from '../../project-graph/project-graph';
-import { createTaskGraph } from '../../tasks-runner/create-task-graph';
+import {
+  createTaskGraph,
+  mapTargetDefaultsToDependencies,
+} from '../../tasks-runner/create-task-graph';
 import { TargetDefaults, TargetDependencies } from '../../config/nx-json';
 import { TaskGraph } from '../../config/task-graph';
 import { daemonClient } from '../../daemon/client/client';
@@ -212,11 +215,12 @@ export async function generateGraph(
     ? args.targets[0]
     : args.targets;
 
-  let graph = pruneExternalNodes(
-    await createProjectGraphAsync({ exitOnError: true })
-  );
+  const rawGraph = await createProjectGraphAsync({ exitOnError: true });
+  let prunedGraph = pruneExternalNodes(rawGraph);
 
-  const projects = Object.values(graph.nodes) as ProjectGraphProjectNode[];
+  const projects = Object.values(
+    prunedGraph.nodes
+  ) as ProjectGraphProjectNode[];
   projects.sort((a, b) => {
     return a.name.localeCompare(b.name);
   });
@@ -240,7 +244,7 @@ export async function generateGraph(
           { printWarnings: true },
           readNxJson()
         ).nxArgs,
-        graph
+        rawGraph
       )
     ).map((n) => n.name);
   }
@@ -268,14 +272,18 @@ export async function generateGraph(
     'utf-8'
   );
 
-  graph = filterGraph(graph, args.focus || null, args.exclude || []);
+  prunedGraph = filterGraph(
+    prunedGraph,
+    args.focus || null,
+    args.exclude || []
+  );
 
   if (args.file) {
     // stdout is a magical constant that doesn't actually write a file
     if (args.file === 'stdout') {
       console.log(
         JSON.stringify(
-          createJsonOutput(graph, args.projects, args.targets),
+          createJsonOutput(prunedGraph, args.projects, args.targets),
           null,
           2
         )
@@ -331,7 +339,7 @@ export async function generateGraph(
     } else if (ext === '.json') {
       ensureDirSync(dirname(fullFilePath));
 
-      const json = createJsonOutput(graph, args.projects, args.targets);
+      const json = createJsonOutput(prunedGraph, args.projects, args.targets);
       json.affectedProjects = affectedProjects;
       json.criticalPath = affectedProjects;
 
@@ -700,17 +708,6 @@ function getAllTaskGraphsForWorkspace(projectGraph: ProjectGraph): {
   }
 
   return { taskGraphs, errors: taskGraphErrors };
-}
-
-function mapTargetDefaultsToDependencies(
-  defaults: TargetDefaults
-): TargetDependencies {
-  const res = {};
-  Object.keys(defaults).forEach((k) => {
-    res[k] = defaults[k].dependsOn;
-  });
-
-  return res;
 }
 
 function createTaskId(

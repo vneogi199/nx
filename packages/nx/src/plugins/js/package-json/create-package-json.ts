@@ -15,6 +15,7 @@ import {
 } from '../../../hasher/task-hasher';
 import { readNxJson } from '../../../config/configuration';
 import { readProjectFileMapCache } from '../../../project-graph/nx-deps-cache';
+import { join } from 'path';
 
 interface NpmDeps {
   readonly dependencies: Record<string, string>;
@@ -39,40 +40,15 @@ export function createPackageJson(
   } = {},
   fileMap: ProjectFileMap = null
 ): PackageJson {
-  if (fileMap == null) {
-    fileMap = readProjectFileMapCache()?.projectFileMap || {};
-  }
-
   const projectNode = graph.nodes[projectName];
   const isLibrary = projectNode.type === 'lib';
 
-  const { selfInputs, dependencyInputs } = options.target
-    ? getTargetInputs(readNxJson(), projectNode, options.target)
-    : { selfInputs: [], dependencyInputs: [] };
-
-  const npmDeps: NpmDeps = {
-    dependencies: {},
-    peerDependencies: {},
-    peerDependenciesMeta: {},
-  };
-
-  const seen = new Set<string>();
-
-  options.helperDependencies?.forEach((dep) => {
-    seen.add(dep);
-    npmDeps.dependencies[graph.externalNodes[dep].data.packageName] =
-      graph.externalNodes[dep].data.version;
-    recursivelyCollectPeerDependencies(dep, graph, npmDeps, seen);
-  });
-
-  findAllNpmDeps(
-    fileMap,
+  const npmDeps = findProjectsNpmDependencies(
     projectNode,
     graph,
-    npmDeps,
-    seen,
-    dependencyInputs,
-    selfInputs
+    options.target,
+    { helperDependencies: options.helperDependencies },
+    fileMap
   );
 
   // default package.json if one does not exist
@@ -80,11 +56,14 @@ export function createPackageJson(
     name: projectName,
     version: '0.0.1',
   };
-  if (existsSync(`${graph.nodes[projectName].data.root}/package.json`)) {
+  const projectPackageJsonPath = join(
+    options.root || workspaceRoot,
+    projectNode.data.root,
+    'package.json'
+  );
+  if (existsSync(projectPackageJsonPath)) {
     try {
-      packageJson = readJsonFile(
-        `${graph.nodes[projectName].data.root}/package.json`
-      );
+      packageJson = readJsonFile(projectPackageJsonPath);
       // for standalone projects we don't want to include all the root dependencies
       if (graph.nodes[projectName].data.root === '.') {
         // TODO: We should probably think more on this - Nx can't always
@@ -194,6 +173,51 @@ export function createPackageJson(
   );
 
   return packageJson;
+}
+
+export function findProjectsNpmDependencies(
+  projectNode: ProjectGraphProjectNode,
+  graph: ProjectGraph,
+  target: string,
+  options: {
+    helperDependencies?: string[];
+  },
+  fileMap?: ProjectFileMap
+): NpmDeps {
+  if (fileMap == null) {
+    fileMap = readProjectFileMapCache()?.projectFileMap || {};
+  }
+
+  const { selfInputs, dependencyInputs } = target
+    ? getTargetInputs(readNxJson(), projectNode, target)
+    : { selfInputs: [], dependencyInputs: [] };
+
+  const npmDeps: NpmDeps = {
+    dependencies: {},
+    peerDependencies: {},
+    peerDependenciesMeta: {},
+  };
+
+  const seen = new Set<string>();
+
+  options.helperDependencies?.forEach((dep) => {
+    seen.add(dep);
+    npmDeps.dependencies[graph.externalNodes[dep].data.packageName] =
+      graph.externalNodes[dep].data.version;
+    recursivelyCollectPeerDependencies(dep, graph, npmDeps, seen);
+  });
+
+  findAllNpmDeps(
+    fileMap,
+    projectNode,
+    graph,
+    npmDeps,
+    seen,
+    dependencyInputs,
+    selfInputs
+  );
+
+  return npmDeps;
 }
 
 function findAllNpmDeps(
