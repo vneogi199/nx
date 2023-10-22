@@ -1,6 +1,6 @@
 {
   "name": "remote",
-  "factory": "./src/generators/remote/remote#remoteGenerator",
+  "factory": "./src/generators/remote/remote#remoteGeneratorInternal",
   "schema": {
     "$schema": "http://json-schema.org/schema",
     "$id": "GeneratorReactRemote",
@@ -14,7 +14,7 @@
         "description": "The name of the remote application to generate the Module Federation configuration",
         "$default": { "$source": "argv", "index": 0 },
         "x-prompt": "What name would you like to use as the remote application?",
-        "pattern": "^[a-zA-Z].*$",
+        "pattern": "^[a-zA-Z][^:]*$",
         "x-priority": "important"
       },
       "directory": {
@@ -22,6 +22,11 @@
         "type": "string",
         "alias": "dir",
         "x-priority": "important"
+      },
+      "projectNameAndRootFormat": {
+        "description": "Whether to generate the project name and root directory as provided (`as-provided`) or generate them composing their values and taking the configured layout into account (`derived`).",
+        "type": "string",
+        "enum": ["as-provided", "derived"]
       },
       "style": {
         "description": "The file extension to be used for style files.",
@@ -52,10 +57,6 @@
             {
               "value": "styled-jsx",
               "label": "styled-jsx        [ https://www.npmjs.com/package/styled-jsx ]"
-            },
-            {
-              "value": "styl",
-              "label": "DEPRECATD: Stylus(.styl) [ http://stylus-lang.com            ]"
             },
             { "value": "none", "label": "None" }
           ]
@@ -147,13 +148,17 @@
       "devServerPort": {
         "type": "number",
         "description": "The port for the dev server of the remote app.",
-        "default": 4200,
         "x-priority": "important"
       },
       "ssr": {
         "description": "Whether to configure SSR for the host application",
         "type": "boolean",
         "default": false
+      },
+      "typescriptConfiguration": {
+        "type": "boolean",
+        "description": "Whether the module federation configuration and webpack configuration files should use TS.",
+        "default": true
       }
     },
     "required": ["name"],
@@ -162,7 +167,7 @@
   },
   "x-type": "application",
   "description": "Generate a remote react application",
-  "implementation": "/packages/react/src/generators/remote/remote#remoteGenerator.ts",
+  "implementation": "/packages/react/src/generators/remote/remote#remoteGeneratorInternal.ts",
   "aliases": [],
   "hidden": false,
   "path": "/packages/react/src/generators/remote/schema.json",

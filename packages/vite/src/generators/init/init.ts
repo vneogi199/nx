@@ -1,6 +1,5 @@
 import {
   addDependenciesToPackageJson,
-  convertNxGenerator,
   logger,
   readJson,
   readNxJson,
@@ -13,17 +12,16 @@ import {
 import { initGenerator as jsInitGenerator } from '@nx/js';
 
 import {
+  edgeRuntimeVmVersion,
+  happyDomVersion,
   jsdomVersion,
   nxVersion,
   vitePluginDtsVersion,
-  vitePluginReactVersion,
   vitePluginReactSwcVersion,
+  vitePluginReactVersion,
   vitestUiVersion,
   vitestVersion,
-  viteTsConfigPathsVersion,
   viteVersion,
-  happyDomVersion,
-  edgeRuntimeVmVersion,
 } from '../../utils/versions';
 import { InitGeneratorSchema } from './schema';
 
@@ -37,7 +35,6 @@ function checkDependenciesInstalled(host: Tree, schema: InitGeneratorSchema) {
   // base deps
   devDependencies['@nx/vite'] = nxVersion;
   devDependencies['vite'] = viteVersion;
-  devDependencies['vite-tsconfig-paths'] = viteTsConfigPathsVersion;
   devDependencies['vitest'] = vitestVersion;
   devDependencies['@vitest/ui'] = vitestUiVersion;
 
@@ -47,7 +44,7 @@ function checkDependenciesInstalled(host: Tree, schema: InitGeneratorSchema) {
     devDependencies['happy-dom'] = happyDomVersion;
   } else if (schema.testEnvironment === 'edge-runtime') {
     devDependencies['@edge-runtime/vm'] = edgeRuntimeVmVersion;
-  } else if (schema.testEnvironment !== 'node') {
+  } else if (schema.testEnvironment !== 'node' && schema.testEnvironment) {
     logger.info(
       `A custom environment was provided: ${schema.testEnvironment}. You need to install it manually.`
     );
@@ -114,6 +111,7 @@ export async function initGenerator(tree: Tree, schema: InitGeneratorSchema) {
     await jsInitGenerator(tree, {
       ...schema,
       skipFormat: true,
+      tsConfigName: schema.rootProject ? 'tsconfig.json' : 'tsconfig.base.json',
     })
   );
 
@@ -122,4 +120,3 @@ export async function initGenerator(tree: Tree, schema: InitGeneratorSchema) {
 }
 
 export default initGenerator;
-export const initSchematic = convertNxGenerator(initGenerator);

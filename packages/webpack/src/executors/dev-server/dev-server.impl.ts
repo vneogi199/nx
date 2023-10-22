@@ -11,7 +11,7 @@ import * as WebpackDevServer from 'webpack-dev-server';
 
 import { getDevServerConfig } from './lib/get-dev-server-config';
 import {
-  calculateProjectDependencies,
+  calculateProjectBuildableDependencies,
   createTmpTsConfig,
 } from '@nx/js/src/utils/buildable-libs-utils';
 import { runWebpackDevServer } from '../../utils/run-webpack';
@@ -19,6 +19,7 @@ import { resolveCustomWebpackConfig } from '../../utils/webpack/custom-webpack';
 import { normalizeOptions } from '../webpack/lib/normalize-options';
 import { WebpackExecutorOptions } from '../webpack/schema';
 import { WebDevServerOptions } from './schema';
+import { join } from 'path';
 
 export async function* devServerExecutor(
   serveOptions: WebDevServerOptions,
@@ -43,7 +44,8 @@ export async function* devServerExecutor(
   }
 
   if (!buildOptions.buildLibsFromSource) {
-    const { target, dependencies } = calculateProjectDependencies(
+    const { target, dependencies } = calculateProjectBuildableDependencies(
+      context.taskGraph,
       context.projectGraph,
       context.root,
       context.projectName,
@@ -61,9 +63,12 @@ export async function* devServerExecutor(
   let config = getDevServerConfig(context, buildOptions, serveOptions);
 
   if (buildOptions.webpackConfig) {
+    let tsconfigPath = buildOptions.tsConfig.startsWith(context.root)
+      ? buildOptions.tsConfig
+      : join(context.root, buildOptions.tsConfig);
     let customWebpack = resolveCustomWebpackConfig(
       buildOptions.webpackConfig,
-      buildOptions.tsConfig
+      tsconfigPath
     );
 
     if (typeof customWebpack.then === 'function') {
@@ -96,7 +101,7 @@ function getBuildOptions(
   options: WebDevServerOptions,
   context: ExecutorContext
 ): WebpackExecutorOptions {
-  const target = parseTargetString(options.buildTarget, context.projectGraph);
+  const target = parseTargetString(options.buildTarget, context);
 
   const overrides: Partial<WebpackExecutorOptions> = {
     watch: false,

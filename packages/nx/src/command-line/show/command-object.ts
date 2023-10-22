@@ -1,3 +1,4 @@
+import type { ProjectGraphProjectNode } from '../../config/project-graph';
 import { CommandModule, showHelp } from 'yargs';
 import { parseCSV, withAffectedOptions } from '../yargs-utils/shared-options';
 
@@ -13,8 +14,9 @@ export type ShowProjectsOptions = NxShowArgs & {
   base: string;
   head: string;
   affected: boolean;
+  type: ProjectGraphProjectNode['type'];
   projects: string[];
-  withTarget: string;
+  withTarget: string[];
 };
 
 export type ShowProjectOptions = NxShowArgs & {
@@ -41,8 +43,12 @@ export const yargsShowCommand: CommandModule<
         'Show a list of all projects in the workspace'
       )
       .example(
-        '$0 show targets',
-        'Show a list of all targets in the workspace'
+        '$0 show projects --with-target serve',
+        'Show a list of all projects in the workspace that have a "serve" target'
+      )
+      .example(
+        '$0 show project [projectName]',
+        'Shows the resolved configuration for [projectName]'
       ),
   handler: async (args) => {
     showHelp();
@@ -69,6 +75,12 @@ const showProjectsCommand: CommandModule<NxShowArgs, ShowProjectsOptions> = {
         type: 'string',
         alias: ['t'],
         description: 'Show only projects that have a specific target',
+        coerce: parseCSV,
+      })
+      .option('type', {
+        type: 'string',
+        description: 'Select only projects of the given type',
+        choices: ['app', 'lib', 'e2e'],
       })
       .implies('untracked', 'affected')
       .implies('uncommitted', 'affected')
@@ -76,11 +88,11 @@ const showProjectsCommand: CommandModule<NxShowArgs, ShowProjectsOptions> = {
       .implies('base', 'affected')
       .implies('head', 'affected')
       .example(
-        '$0 show projects --patterns "apps/*"',
+        '$0 show projects --projects "apps/*"',
         'Show all projects in the apps directory'
       )
       .example(
-        '$0 show projects --patterns "shared-*"',
+        '$0 show projects --projects "shared-*"',
         'Show all projects that start with "shared-"'
       )
       .example(
@@ -88,7 +100,11 @@ const showProjectsCommand: CommandModule<NxShowArgs, ShowProjectsOptions> = {
         'Show affected projects in the workspace'
       )
       .example(
-        '$0 show projects --affected --exclude *-e2e',
+        '$0 show projects --type app --affected',
+        'Show affected apps in the workspace'
+      )
+      .example(
+        '$0 show projects --affected --exclude=*-e2e',
         'Show affected projects in the workspace, excluding end-to-end projects'
       ) as any,
   handler: (args) => import('./show').then((m) => m.showProjectsHandler(args)),
@@ -96,13 +112,13 @@ const showProjectsCommand: CommandModule<NxShowArgs, ShowProjectsOptions> = {
 
 const showProjectCommand: CommandModule<NxShowArgs, ShowProjectOptions> = {
   command: 'project <projectName>',
-  describe: 'Show a list of targets in the workspace.',
+  describe: 'Shows resolved project configuration for a given project.',
   builder: (yargs) =>
     yargs
       .positional('projectName', {
         type: 'string',
         alias: 'p',
-        description: 'Show targets for the given project',
+        description: 'Which project should be viewed?',
       })
       .default('json', true)
       .example(

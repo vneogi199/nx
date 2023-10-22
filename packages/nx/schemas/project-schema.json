@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "$id": "https://nx.dev/project-schema",
+  "$id": "https://nx.dev/reference/project-configuration",
   "title": "JSON schema for Nx projects",
   "type": "object",
   "properties": {
@@ -108,6 +108,10 @@
           "command": {
             "type": "string",
             "description": "A shorthand for using the nx:run-commands executor"
+          },
+          "cache": {
+            "type": "boolean",
+            "description": "Specifies if the given target should be cacheable"
           }
         }
       }

@@ -5,11 +5,15 @@ Why should you use this plugin?
 - _Fast_ builds using esbuild.
 - Type-checking using TypeScript, which esbuild does not handle.
 - Intelligent `package.json` output.
-- Additional [assets](/packages/esbuild/executors/esbuild#assets) for the output.
+- Additional [assets](/nx-api/esbuild/executors/esbuild#assets) for the output.
 
 ## Setting up esbuild
 
 To create a new workspace, run `npx create-nx-workspace@latest --preset=npm`.
+
+{% callout type="note" title="Keep Nx Package Versions In Sync" %}
+Make sure to install the `@nx/esbuild` version that matches the version of `nx` in your repository. If the version numbers get out of sync, you can encounter some difficult to debug errors. You can [fix Nx version mismatches with this recipe](/recipes/tips-n-tricks/keep-nx-versions-in-sync).
+{% /callout %}
 
 To add the esbuild plugin to an existing workspace, run the following:
 
@@ -32,10 +36,14 @@ yarn add -D @nx/esbuild
 
 ### Creating a new JS library
 
+{% callout type="note" title="Directory Flag Behavior Changes" %}
+The command below uses the `as-provided` directory flag behavior, which is the default in Nx 16.8.0. If you're on an earlier version of Nx or using the `derived` option, omit the `--directory` flag. See the [workspace layout documentation](/reference/nx-json#workspace-layout) for more details.
+{% /callout %}
+
 You can add a new library that builds using esbuild with:
 
 ```shell
-nx g @nx/js:lib mylib --bundler=esbuild
+nx g @nx/js:lib mylib --directory=libs/mylib --bundler=esbuild
 ```
 
 This command will install the esbuild plugin if needed, and set `@nx/esbuild:esbuild` executor for the `build` target.
@@ -45,13 +53,13 @@ This command will install the esbuild plugin if needed, and set `@nx/esbuild:esb
 If you already have a JS project that you want to use esbuild for, run this command:
 
 ```shell
-nx g esbuild-project mylib
+nx g @nx/esbuild:configuration mylib
 ```
 
 This generator validates there isn't an existing `build` target. If you want to overwrite the existing target you can pass the `--skipValidation` option.
 
 ```shell
-nx g esbuild-project mylib --skipValidation
+nx g @nx/esbuild:configuration mylib --skipValidation
 ```
 
 ## Using esbuild
@@ -133,4 +141,4 @@ Extra API options for esbuild can be passed in the `esbuildOptions` object for y
 
 ## More Documentation
 
-- [Using JS](/packages/js)
+- [Using JS](/nx-api/js)

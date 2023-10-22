@@ -1,7 +1,7 @@
 import { assertMinimumCypressVersion } from '@nx/cypress/src/utils/cypress-version';
 import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 import { UnitTestRunner } from '../../utils/test-runners';
 import { componentGenerator } from '../component/component';
 import { generateTestLibrary } from '../utils/testing';
@@ -38,7 +38,7 @@ describe('Angular Cypress Component Test Generator', () => {
       componentDir: 'src/lib/my-lib',
     });
     expect(
-      tree.read('libs/my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
+      tree.read('my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
     ).toMatchSnapshot();
   });
 
@@ -54,7 +54,7 @@ describe('Angular Cypress Component Test Generator', () => {
     });
 
     tree.write(
-      'libs/my-lib/src/lib/my-lib/my-lib.component.ts',
+      'my-lib/src/lib/my-lib/my-lib.component.ts',
       `
 import { Component, OnInit, Input } from '@angular/core';
 
@@ -73,7 +73,7 @@ export class MyLibComponent implements OnInit {
   @Input() message: string | undefined;
   @Input() anotherProp: any;
   @Input() anotherNeverProp: never;
-  
+
   constructor() { }
 
   ngOnInit(): void {
@@ -90,7 +90,7 @@ export class MyLibComponent implements OnInit {
     });
 
     expect(
-      tree.read('libs/my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
+      tree.read('my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
     ).toMatchSnapshot();
   });
 
@@ -106,7 +106,7 @@ export class MyLibComponent implements OnInit {
       standalone: true,
     });
     tree.write(
-      'libs/my-lib/src/lib/my-lib/my-lib.component.ts',
+      'my-lib/src/lib/my-lib/my-lib.component.ts',
       `
 import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -141,7 +141,7 @@ export class MyLibComponent implements OnInit {
       componentDir: 'src/lib/my-lib',
     });
     expect(
-      tree.read('libs/my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
+      tree.read('my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
     ).toMatchSnapshot();
   });
 
@@ -154,7 +154,7 @@ export class MyLibComponent implements OnInit {
 
     await componentGenerator(tree, { name: 'my-lib', project: 'my-lib' });
     tree.write(
-      'libs/my-lib/src/lib/my-lib/my-lib.component.cy.ts',
+      'my-lib/src/lib/my-lib/my-lib.component.cy.ts',
       `should not overwrite`
     );
 
@@ -166,7 +166,7 @@ export class MyLibComponent implements OnInit {
     });
 
     expect(
-      tree.read('libs/my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
+      tree.read('my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
     ).toEqual('should not overwrite');
   });
 
@@ -186,11 +186,11 @@ describe(MyLibComponent.name, () => {
 
   beforeEach(() => {
     TestBed.overrideComponent(MyLibComponent, {
-      add: { 
+      add: {
         imports: [],
         providers: []
       }
-    }) 
+    })
   })
 
   it('renders', () => {
@@ -207,7 +207,7 @@ describe(MyLibComponent.name, () => {
       componentDir: 'src/lib/my-lib',
     });
     expect(
-      tree.read('libs/my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
+      tree.read('my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
     ).toEqual(expected);
 
     componentTestGenerator(tree, {
@@ -217,7 +217,7 @@ describe(MyLibComponent.name, () => {
       componentDir: 'src/lib/my-lib',
     });
     expect(
-      tree.read('libs/my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
+      tree.read('my-lib/src/lib/my-lib/my-lib.component.cy.ts', 'utf-8')
     ).toEqual(expected);
   });
 });

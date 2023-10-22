@@ -16,8 +16,14 @@ import {
   typesCorsVersion,
   typesExpressVersion,
 } from '../../../utils/versions';
+import { join } from 'path';
 
-export async function addSsr(tree: Tree, options: Schema, appName: string) {
+export async function addSsr(
+  tree: Tree,
+  options: Schema,
+  appName: string,
+  typescriptConfiguration: boolean
+) {
   let project = readProjectConfiguration(tree, appName);
 
   await setupSsr(tree, {
@@ -34,18 +40,38 @@ export async function addSsr(tree: Tree, options: Schema, appName: string) {
     "import('./src/main.server');"
   );
 
-  generateFiles(tree, joinPathFragments(__dirname, '../files'), project.root, {
+  const browserBundleOutput = joinPathFragments(
+    project.targets.build.options.outputPath,
+    'browser'
+  );
+
+  generateFiles(tree, join(__dirname, '../files/common'), project.root, {
     appName,
+    browserBundleOutput,
     standalone: options.standalone,
     tmpl: '',
   });
+
+  const pathToTemplateFiles = typescriptConfiguration ? 'ts' : 'js';
+
+  generateFiles(
+    tree,
+    join(__dirname, '../files', pathToTemplateFiles),
+    project.root,
+    {
+      tmpl: '',
+    }
+  );
 
   // update project.json
   project = readProjectConfiguration(tree, appName);
 
   project.targets.server.executor = '@nx/angular:webpack-server';
   project.targets.server.options.customWebpackConfig = {
-    path: joinPathFragments(project.root, 'webpack.server.config.js'),
+    path: joinPathFragments(
+      project.root,
+      `webpack.server.config.${pathToTemplateFiles}`
+    ),
   };
 
   project.targets['serve-ssr'].executor =

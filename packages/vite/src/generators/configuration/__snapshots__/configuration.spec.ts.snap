@@ -1,35 +1,29 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`@nx/vite:configuration library mode should add config for building library 1`] = `
-"/// <reference types="vitest" />
+"/// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import viteTsConfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
-  cacheDir: '../node_modules/.vite/my-lib',
+  cacheDir: '../../node_modules/.vite/react-lib-nonb-jest',
 
   plugins: [
+    react(),
+    nxViteTsPaths(),
     dts({
       entryRoot: 'src',
       tsConfigFilePath: path.join(__dirname, 'tsconfig.lib.json'),
       skipDiagnostics: true,
     }),
-    react(),
-    viteTsConfigPaths({
-      root: '../',
-    }),
   ],
 
   // Uncomment this if you are using workers.
   // worker: {
-  //  plugins: [
-  //    viteTsConfigPaths({
-  //      root: '../',
-  //    }),
-  //  ],
+  //  plugins: [ nxViteTsPaths() ],
   // },
 
   // Configuration for building your library.
@@ -38,7 +32,7 @@ export default defineConfig({
     lib: {
       // Could also be a dictionary or array of multiple entry points.
       entry: 'src/index.ts',
-      name: 'my-lib',
+      name: 'react-lib-nonb-jest',
       fileName: 'index',
       // Change this to the formats you want to support.
       // Don't forget to update your package.json as well.
@@ -54,35 +48,29 @@ export default defineConfig({
 `;
 
 exports[`@nx/vite:configuration library mode should set up non buildable library correctly 1`] = `
-"/// <reference types="vitest" />
+"/// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import viteTsConfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
   cacheDir: '../../node_modules/.vite/react-lib-nonb-jest',
 
   plugins: [
+    react(),
+    nxViteTsPaths(),
     dts({
       entryRoot: 'src',
       tsConfigFilePath: path.join(__dirname, 'tsconfig.lib.json'),
       skipDiagnostics: true,
     }),
-    react(),
-    viteTsConfigPaths({
-      root: '../../',
-    }),
   ],
 
   // Uncomment this if you are using workers.
   // worker: {
-  //  plugins: [
-  //    viteTsConfigPaths({
-  //      root: '../../',
-  //    }),
-  //  ],
+  //  plugins: [ nxViteTsPaths() ],
   // },
 
   // Configuration for building your library.
@@ -126,7 +114,7 @@ exports[`@nx/vite:configuration library mode should set up non buildable library
       "projectType": "library",
       "targets": {
         "lint": {
-          "executor": "@nx/linter:eslint",
+          "executor": "@nx/eslint:lint",
           "outputs": ["{options.outputFile}"],
           "options": {
             "lintFilePatterns": [
@@ -155,7 +143,7 @@ exports[`@nx/vite:configuration library mode should set up non buildable library
 import * as path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import viteTsConfigPaths from 'vite-tsconfig-paths';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
   // Configuration for building your library.
@@ -177,12 +165,8 @@ export default defineConfig({
     },
   },
   plugins: [
-    ...[
-      react(),
-      viteTsConfigPaths({
-        root: '../../',
-      }),
-    ],
+    nxViteTsPaths(),
+    react(),
     dts({
       entryRoot: 'src',
       tsConfigFilePath: path.join(__dirname, 'tsconfig.lib.json'),
@@ -192,9 +176,7 @@ export default defineConfig({
 
   test: {
     globals: true,
-    cache: {
-      dir: '../../node_modules/.vitest',
-    },
+    cache: { dir: '../../node_modules/.vitest' },
     environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
   },
@@ -213,7 +195,7 @@ exports[`@nx/vite:configuration library mode should set up non buildable library
       "projectType": "library",
       "targets": {
         "lint": {
-          "executor": "@nx/linter:eslint",
+          "executor": "@nx/eslint:lint",
           "outputs": ["{options.outputFile}"],
           "options": {
             "lintFilePatterns": [
@@ -273,7 +255,7 @@ exports[`@nx/vite:configuration transform React app to use Vite by providing cus
           }
         },
         "lint": {
-          "executor": "@nx/linter:eslint",
+          "executor": "@nx/eslint:lint",
           "outputs": ["{options.outputFile}"],
           "options": {
             "lintFilePatterns": [
@@ -298,10 +280,10 @@ exports[`@nx/vite:configuration transform React app to use Vite by providing cus
 `;
 
 exports[`@nx/vite:configuration transform React app to use Vite should create vite.config file at the root of the app 1`] = `
-"/// <reference types="vitest" />
+"/// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import viteTsConfigPaths from 'vite-tsconfig-paths';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
   cacheDir: '../../node_modules/.vite/my-test-react-app',
@@ -316,20 +298,11 @@ export default defineConfig({
     host: 'localhost',
   },
 
-  plugins: [
-    react(),
-    viteTsConfigPaths({
-      root: '../../',
-    }),
-  ],
+  plugins: [react(), nxViteTsPaths()],
 
   // Uncomment this if you are using workers.
   // worker: {
-  //  plugins: [
-  //    viteTsConfigPaths({
-  //      root: '../../',
-  //    }),
-  //  ],
+  //  plugins: [ nxViteTsPaths() ],
   // },
 });
 "
@@ -425,7 +398,7 @@ exports[`@nx/vite:configuration transform React app to use Vite should transform
           }
         },
         "lint": {
-          "executor": "@nx/linter:eslint",
+          "executor": "@nx/eslint:lint",
           "outputs": ["{options.outputFile}"],
           "options": {
             "lintFilePatterns": ["apps/my-test-react-app/**/*.{ts,tsx,js,jsx}"]
@@ -448,10 +421,10 @@ exports[`@nx/vite:configuration transform React app to use Vite should transform
 `;
 
 exports[`@nx/vite:configuration transform Web app to use Vite should create vite.config file at the root of the app 1`] = `
-"/// <reference types="vitest" />
+"/// <reference types='vitest' />
 import { defineConfig } from 'vite';
 
-import viteTsConfigPaths from 'vite-tsconfig-paths';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
   cacheDir: '../../node_modules/.vite/my-test-web-app',
@@ -466,19 +439,11 @@ export default defineConfig({
     host: 'localhost',
   },
 
-  plugins: [
-    viteTsConfigPaths({
-      root: '../../',
-    }),
-  ],
+  plugins: [nxViteTsPaths()],
 
   // Uncomment this if you are using workers.
   // worker: {
-  //  plugins: [
-  //    viteTsConfigPaths({
-  //      root: '../../',
-  //    }),
-  //  ],
+  //  plugins: [ nxViteTsPaths() ],
   // },
 });
 "
@@ -562,7 +527,7 @@ exports[`@nx/vite:configuration transform Web app to use Vite should transform w
           }
         },
         "lint": {
-          "executor": "@nx/linter:eslint",
+          "executor": "@nx/eslint:lint",
           "outputs": ["{options.outputFile}"],
           "options": {
             "lintFilePatterns": ["apps/my-test-web-app/**/*.ts"]
@@ -584,10 +549,10 @@ exports[`@nx/vite:configuration transform Web app to use Vite should transform w
 `;
 
 exports[`@nx/vite:configuration vitest should create a vitest configuration if "includeVitest" is true 1`] = `
-"/// <reference types="vitest" />
+"/// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import viteTsConfigPaths from 'vite-tsconfig-paths';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
   cacheDir: '../../node_modules/.vite/my-test-react-app',
@@ -602,20 +567,11 @@ export default defineConfig({
     host: 'localhost',
   },
 
-  plugins: [
-    react(),
-    viteTsConfigPaths({
-      root: '../../',
-    }),
-  ],
+  plugins: [react(), nxViteTsPaths()],
 
   // Uncomment this if you are using workers.
   // worker: {
-  //  plugins: [
-  //    viteTsConfigPaths({
-  //      root: '../../',
-  //    }),
-  //  ],
+  //  plugins: [ nxViteTsPaths() ],
   // },
 
   test: {

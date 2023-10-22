@@ -24,8 +24,8 @@
     "url": "https://github.com/nrwl/nx/issues"
   },
   "homepage": "https://nx.dev",
-  "builders": "./executors.json",
-  "schematics": "./generators.json",
+  "executors": "./executors.json",
+  "generators": "./generators.json",
   "ng-update": {
     "requirements": {},
     "migrations": "./migrations.json"
@@ -36,9 +36,10 @@
     "chalk": "^4.1.0",
     "file-loader": "^6.2.0",
     "minimatch": "3.0.5",
+    "tslib": "^2.3.0",
     "@nx/devkit": "file:../devkit",
     "@nx/js": "file:../js",
-    "@nx/linter": "file:../linter",
+    "@nx/eslint": "file:../eslint",
     "@nx/web": "file:../web"
   },
   "publishConfig": {

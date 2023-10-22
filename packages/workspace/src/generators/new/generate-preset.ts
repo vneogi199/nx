@@ -16,14 +16,6 @@ import * as yargsParser from 'yargs-parser';
 import { spawn, SpawnOptions } from 'child_process';
 
 export function addPresetDependencies(host: Tree, options: NormalizedSchema) {
-  if (
-    options.preset === Preset.Apps ||
-    options.preset === Preset.Core ||
-    options.preset === Preset.Empty ||
-    options.preset === Preset.NPM
-  ) {
-    return;
-  }
   const { dependencies, dev } = getPresetDependencies(options);
   return addDependenciesToPackageJson(
     host,
@@ -98,6 +90,8 @@ function getPresetDependencies({
   e2eTestRunner,
 }: NormalizedSchema) {
   switch (preset) {
+    case Preset.Apps:
+    case Preset.NPM:
     case Preset.TS:
     case Preset.TsStandalone:
       return { dependencies: {}, dev: { '@nx/js': nxVersion } };
@@ -124,6 +118,19 @@ function getPresetDependencies({
     case Preset.NextJs:
     case Preset.NextJsStandalone:
       return { dependencies: { '@nx/next': nxVersion }, dev: {} };
+
+    case Preset.VueMonorepo:
+    case Preset.VueStandalone:
+      return {
+        dependencies: {},
+        dev: {
+          '@nx/vue': nxVersion,
+          '@nx/cypress': e2eTestRunner === 'cypress' ? nxVersion : undefined,
+          '@nx/playwright':
+            e2eTestRunner === 'playwright' ? nxVersion : undefined,
+          '@nx/vite': nxVersion,
+        },
+      };
 
     case Preset.ReactMonorepo:
     case Preset.ReactStandalone:

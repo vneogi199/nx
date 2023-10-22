@@ -1,7 +1,8 @@
-// nx-ignore-next-line
-const { Linter } = require('@nx/linter'); // use require to import to avoid circular dependency
+import type { ProjectNameAndRootFormat } from '@nx/devkit/src/generators/project-name-and-root-utils';
 import type { AssetGlob, FileInputOutput } from './assets/assets';
 import { TransformerEntry } from './typescript/types';
+// nx-ignore-next-line
+const { Linter } = require('@nx/eslint'); // use require to import to avoid circular dependency
 
 export type Compiler = 'tsc' | 'swc';
 export type Bundler = 'swc' | 'tsc' | 'rollup' | 'vite' | 'esbuild' | 'none';
@@ -9,6 +10,7 @@ export type Bundler = 'swc' | 'tsc' | 'rollup' | 'vite' | 'esbuild' | 'none';
 export interface LibraryGeneratorSchema {
   name: string;
   directory?: string;
+  projectNameAndRootFormat?: ProjectNameAndRootFormat;
   skipFormat?: boolean;
   tags?: string;
   skipTsConfig?: boolean;
@@ -38,12 +40,12 @@ export interface ExecutorOptions {
   rootDir?: string;
   outputPath: string;
   tsConfig: string;
+  generateExportsField?: boolean;
+  additionalEntryPoints?: string[];
   swcrc?: string;
   watch: boolean;
   clean?: boolean;
   transformers: TransformerEntry[];
-  updateBuildableProjectDepsInPackageJson?: boolean;
-  buildableProjectDepsInPackageJsonType?: 'dependencies' | 'peerDependencies';
   external?: 'all' | 'none' | string[];
   externalBuildTargets?: string[];
   generateLockfile?: boolean;

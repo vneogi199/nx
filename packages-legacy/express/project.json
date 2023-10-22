@@ -5,6 +5,7 @@
   "projectType": "library",
   "targets": {
     "build": {
+      "outputs": ["{workspaceRoot}/build/packages/{projectName}/README.md"],
       "command": "node ./scripts/copy-readme.js express-legacy"
     },
     "build-base": {
@@ -14,7 +15,6 @@
         "main": "packages-legacy/express/index.ts",
         "tsConfig": "packages-legacy/express/tsconfig.json",
         "outputPath": "build/packages/express-legacy",
-        "updateBuildableProjectDepsInPackageJson": false,
         "assets": [
           {
             "input": "packages-legacy/express",

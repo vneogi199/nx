@@ -13,6 +13,7 @@ import {
   runCLI,
   runCLIAsync,
   runCommand,
+  setMaxWorkers,
   tmpProjPath,
   uniq,
   updateFile,
@@ -22,15 +23,15 @@ import { renameSync, writeFileSync } from 'fs';
 import { ensureDirSync } from 'fs-extra';
 import * as path from 'path';
 import { major } from 'semver';
+import { join } from 'path';
 
 describe('Nx Commands', () => {
-  let proj: string;
-  beforeAll(() => (proj = newProject()));
+  beforeAll(() => newProject());
 
   afterAll(() => cleanupProject());
 
   describe('show', () => {
-    it('should show the list of projects', () => {
+    it('should show the list of projects', async () => {
       const app1 = uniq('myapp');
       const app2 = uniq('myapp');
       expect(
@@ -39,6 +40,7 @@ describe('Nx Commands', () => {
 
       runCLI(`generate @nx/web:app ${app1} --tags e2etag`);
       runCLI(`generate @nx/web:app ${app2}`);
+      setMaxWorkers(join('apps', app1, 'project.json'));
 
       const s = runCLI('show projects').split('\n');
 
@@ -146,8 +148,9 @@ describe('Nx Commands', () => {
     const myapp = uniq('myapp');
     const mylib = uniq('mylib');
 
-    beforeAll(() => {
+    beforeAll(async () => {
       runCLI(`generate @nx/web:app ${myapp}`);
+      setMaxWorkers(join('apps', myapp, 'project.json'));
       runCLI(`generate @nx/js:lib ${mylib}`);
     });
 

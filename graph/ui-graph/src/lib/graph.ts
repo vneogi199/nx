@@ -31,8 +31,11 @@ export class GraphService {
   constructor(
     container: string | HTMLElement,
     theme: 'light' | 'dark',
-    renderMode?: 'nx-console' | 'nx-docs',
-    rankDir: 'TB' | 'LR' = 'TB'
+    public renderMode?: 'nx-console' | 'nx-docs',
+    rankDir: 'TB' | 'LR' = 'TB',
+    public getTaskInputs: (
+      taskId: string
+    ) => Promise<Record<string, string[]>> = undefined
   ) {
     use(cytoscapeDagre);
     use(popper);

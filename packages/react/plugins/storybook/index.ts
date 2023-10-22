@@ -135,7 +135,7 @@ const fixBabelConfigurationIfNeeded = (
   let babelRuleItem;
   for (const rule of webpackConfig.module.rules) {
     if (typeof rule === 'string') continue;
-    if (!Array.isArray(rule.use)) continue;
+    if (!rule || !Array.isArray(rule.use)) continue;
     for (const item of rule.use) {
       if (typeof item !== 'string' && item['loader'].includes('babel-loader')) {
         babelRuleItem = item;
@@ -167,9 +167,15 @@ export const webpack = async (
   }
 
   const { withNx, withWeb } = require('@nx/webpack');
-  const tsconfigPath = join(options.configDir, 'tsconfig.json');
 
   const projectData = await getProjectData(options);
+  const tsconfigPath = existsSync(
+    join(projectData.projectRoot, 'tsconfig.storybook.json')
+  )
+    ? join(projectData.projectRoot, 'tsconfig.storybook.json')
+    : join(projectData.projectRoot, 'tsconfig.json');
+  // The 'tsconfig.json' is mainly for the cypress test to be able to run
+  // because it will look into the cypress project dir and it will not find tsconfig.storybook.json
 
   fixBabelConfigurationIfNeeded(storybookWebpackConfig, projectData);
 
@@ -229,8 +235,8 @@ export const webpack = async (
       new DefinePlugin(
         getClientEnvironment(storybookWebpackConfig.mode).stringified
       ),
-      ...(storybookWebpackConfig.plugins ?? []),
-      ...(finalConfig.plugins ?? [])
+      ...((storybookWebpackConfig.plugins as WebpackPluginInstance[]) ?? []),
+      ...((finalConfig.plugins as WebpackPluginInstance[]) ?? [])
     ) as WebpackPluginInstance[],
   };
 };

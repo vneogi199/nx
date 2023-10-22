@@ -2,16 +2,14 @@ import { existsSync } from 'fs';
 import { ensureDirSync, renameSync } from 'fs-extra';
 import { join } from 'path';
 import { performance } from 'perf_hooks';
-import { NxJsonConfiguration } from '../config/nx-json';
+import { NxJsonConfiguration, PluginConfiguration } from '../config/nx-json';
 import {
   FileData,
+  FileMap,
   ProjectFileMap,
   ProjectGraph,
-  ProjectGraphDependency,
-  ProjectGraphExternalNode,
-  ProjectGraphProjectNode,
 } from '../config/project-graph';
-import { ProjectsConfigurations } from '../config/workspace-json-project-json';
+import { ProjectConfiguration } from '../config/workspace-json-project-json';
 import { projectGraphCacheDirectory } from '../utils/cache-directory';
 import {
   directoryExists,
@@ -19,16 +17,17 @@ import {
   readJsonFile,
   writeJsonFile,
 } from '../utils/fileutils';
+import { PackageJson } from '../utils/package-json';
 import { nxVersion } from '../utils/versions';
 
-export interface ProjectFileMapCache {
+export interface FileMapCache {
   version: string;
   nxVersion: string;
   deps: Record<string, string>;
   pathMappings: Record<string, any>;
-  nxJsonPlugins: { name: string; version: string }[];
+  nxJsonPlugins: PluginData[];
   pluginsConfig?: any;
-  projectFileMap: ProjectFileMap;
+  fileMap: FileMap;
 }
 
 export const nxProjectGraph = join(
@@ -61,7 +60,7 @@ export function ensureCacheDirectory(): void {
   }
 }
 
-export function readProjectFileMapCache(): null | ProjectFileMapCache {
+export function readFileMapCache(): null | FileMapCache {
   performance.mark('read cache:start');
   ensureCacheDirectory();
 
@@ -110,28 +109,25 @@ export function readProjectGraphCache(): null | ProjectGraph {
 export function createProjectFileMapCache(
   nxJson: NxJsonConfiguration<'*' | string[]>,
   packageJsonDeps: Record<string, string>,
-  projectFileMap: ProjectFileMap,
+  fileMap: FileMap,
   tsConfig: { compilerOptions?: { paths?: { [p: string]: any } } }
 ) {
-  const nxJsonPlugins = (nxJson.plugins || []).map((p) => ({
-    name: p,
-    version: packageJsonDeps[p],
-  }));
-  const newValue: ProjectFileMapCache = {
+  const nxJsonPlugins = getNxJsonPluginsData(nxJson, packageJsonDeps);
+  const newValue: FileMapCache = {
     version: '6.0',
     nxVersion: nxVersion,
     deps: packageJsonDeps, // TODO(v18): We can remove this in favor of nxVersion
     // compilerOptions may not exist, especially for package-based repos
     pathMappings: tsConfig?.compilerOptions?.paths || {},
     nxJsonPlugins,
-    pluginsConfig: nxJson.pluginsConfig,
-    projectFileMap,
+    pluginsConfig: nxJson?.pluginsConfig,
+    fileMap,
   };
   return newValue;
 }
 
 export function writeCache(
-  cache: ProjectFileMapCache,
+  cache: FileMapCache,
   projectGraph: ProjectGraph
 ): void {
   performance.mark('write cache:start');
@@ -172,9 +168,9 @@ export function writeCache(
 }
 
 export function shouldRecomputeWholeGraph(
-  cache: ProjectFileMapCache,
+  cache: FileMapCache,
   packageJsonDeps: Record<string, string>,
-  projects: ProjectsConfigurations,
+  projects: Record<string, ProjectConfiguration>,
   nxJson: NxJsonConfiguration,
   tsConfig: { compilerOptions: { paths: { [k: string]: any } } }
 ): boolean {
@@ -186,8 +182,8 @@ export function shouldRecomputeWholeGraph(
   }
 
   // we have a cached project that is no longer present
-  const cachedNodes = Object.keys(cache.projectFileMap);
-  if (cachedNodes.some((p) => projects.projects[p] === undefined)) {
+  const cachedNodes = Object.keys(cache.fileMap.projectFileMap);
+  if (cachedNodes.some((p) => projects[p] === undefined)) {
     return true;
   }
 
@@ -209,21 +205,16 @@ export function shouldRecomputeWholeGraph(
   }
 
   // a new plugin has been added
-  if ((nxJson.plugins || []).length !== cache.nxJsonPlugins.length) return true;
-
-  // a plugin has changed
   if (
-    (nxJson.plugins || []).some((t) => {
-      const matchingPlugin = cache.nxJsonPlugins.find((p) => p.name === t);
-      if (!matchingPlugin) return true;
-      return matchingPlugin.version !== packageJsonDeps[t];
-    })
+    JSON.stringify(getNxJsonPluginsData(nxJson, packageJsonDeps)) !==
+    JSON.stringify(cache.nxJsonPlugins)
   ) {
     return true;
   }
 
   if (
-    JSON.stringify(nxJson.pluginsConfig) !== JSON.stringify(cache.pluginsConfig)
+    JSON.stringify(nxJson?.pluginsConfig) !==
+    JSON.stringify(cache.pluginsConfig)
   ) {
     return true;
   }
@@ -231,32 +222,51 @@ export function shouldRecomputeWholeGraph(
   return false;
 }
 
+export type CachedFileData = {
+  nonProjectFiles: Record<string, FileData>;
+  projectFileMap: { [project: string]: Record<string, FileData> };
+};
+
 /*
 This can only be invoked when the list of projects is either the same
 or new projects have been added, so every project in the cache has a corresponding
 project in fileMap
 */
 export function extractCachedFileData(
-  fileMap: ProjectFileMap,
-  c: ProjectFileMapCache
+  fileMap: FileMap,
+  c: FileMapCache
 ): {
-  filesToProcess: ProjectFileMap;
-  cachedFileData: { [project: string]: { [file: string]: FileData } };
+  filesToProcess: FileMap;
+  cachedFileData: CachedFileData;
 } {
-  const filesToProcess: ProjectFileMap = {};
-  const cachedFileData: Record<string, Record<string, FileData>> = {};
-  const currentProjects = Object.keys(fileMap).filter(
-    (name) => fileMap[name].length > 0
+  const filesToProcess: FileMap = {
+    nonProjectFiles: [],
+    projectFileMap: {},
+  };
+  const cachedFileData: CachedFileData = {
+    nonProjectFiles: {},
+    projectFileMap: {},
+  };
+
+  const currentProjects = Object.keys(fileMap.projectFileMap).filter(
+    (name) => fileMap.projectFileMap[name].length > 0
   );
   currentProjects.forEach((p) => {
     processProjectNode(
       p,
-      c.projectFileMap,
-      cachedFileData,
-      filesToProcess,
+      c.fileMap.projectFileMap,
+      cachedFileData.projectFileMap,
+      filesToProcess.projectFileMap,
       fileMap
     );
   });
+
+  processNonProjectFiles(
+    c.fileMap.nonProjectFiles,
+    fileMap.nonProjectFiles,
+    filesToProcess.nonProjectFiles,
+    cachedFileData.nonProjectFiles
+  );
 
   return {
     filesToProcess,
@@ -264,15 +274,32 @@ export function extractCachedFileData(
   };
 }
 
+function processNonProjectFiles(
+  cachedFiles: FileData[],
+  nonProjectFiles: FileData[],
+  filesToProcess: FileMap['nonProjectFiles'],
+  cachedFileData: CachedFileData['nonProjectFiles']
+) {
+  const cachedHashMap = new Map(cachedFiles.map((f) => [f.file, f]));
+  for (const f of nonProjectFiles) {
+    const cachedFile = cachedHashMap.get(f.file);
+    if (!cachedFile || cachedFile.hash !== f.hash) {
+      filesToProcess.push(f);
+    } else {
+      cachedFileData[f.file] = cachedFile;
+    }
+  }
+}
+
 function processProjectNode(
   projectName: string,
   cachedFileMap: ProjectFileMap,
   cachedFileData: { [project: string]: { [file: string]: FileData } },
   filesToProcess: ProjectFileMap,
-  fileMap: ProjectFileMap
+  { projectFileMap }: FileMap
 ) {
   if (!cachedFileMap[projectName]) {
-    filesToProcess[projectName] = fileMap[projectName];
+    filesToProcess[projectName] = projectFileMap[projectName];
     return;
   }
 
@@ -285,7 +312,7 @@ function processProjectNode(
     cachedFileData[projectName] = {};
   }
 
-  for (let f of fileMap[projectName]) {
+  for (let f of projectFileMap[projectName]) {
     const fromCache = fileDataFromCache[f.file];
     if (fromCache && fromCache.hash == f.hash) {
       cachedFileData[projectName][f.file] = fromCache;
@@ -296,4 +323,25 @@ function processProjectNode(
       filesToProcess[projectName].push(f);
     }
   }
+}
+
+type PluginData = {
+  name: string;
+  version: string;
+  options?: unknown;
+};
+
+function getNxJsonPluginsData(
+  nxJson: NxJsonConfiguration,
+  packageJsonDeps: Record<string, string>
+): PluginData[] {
+  return (nxJson?.plugins || []).map((p) => {
+    const [plugin, options] =
+      typeof p === 'string' ? [p] : [p.plugin, p.options];
+    return {
+      name: plugin,
+      version: packageJsonDeps[plugin],
+      options,
+    };
+  });
 }

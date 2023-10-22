@@ -109,7 +109,7 @@ export async function getLegacyMigrationFunctionIfApplicable(
     }
 
     printFinalMessage({
-      learnMoreLink: 'https://nx.dev/recipes/adopting-nx/migration-angular',
+      learnMoreLink: 'https://nx.dev/recipes/angular/migration/angular',
       bodyLines: [
         '- Execute "npx nx build" twice to see the computation caching in action.',
       ],
@@ -140,14 +140,6 @@ async function installDependencies(
     json.devDependencies[`${pkgInfo.pkgScope}/tao`] = pkgInfo.pkgVersion;
   }
 
-  if (useNxCloud) {
-    // get the latest nx-cloud version compatible with the Nx major
-    // version being installed
-    json.devDependencies['nx-cloud'] = await resolvePackageVersion(
-      'nx-cloud',
-      `^${major(pkgInfo.pkgVersion)}.0.0`
-    );
-  }
   json.devDependencies = sortObjectByKeys(json.devDependencies);
 
   if (pkgInfo.unscopedPkgName === 'angular') {

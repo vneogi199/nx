@@ -5,8 +5,9 @@ import {
   runCommand,
   uniq,
   updateFile,
-  updateProjectConfig,
+  updateJson,
 } from '@nx/e2e/utils';
+import { join } from 'path';
 
 describe('Invoke Runner', () => {
   let proj: string;
@@ -16,7 +17,7 @@ describe('Invoke Runner', () => {
   it('should invoke runner imperatively ', async () => {
     const mylib = uniq('mylib');
     runCLI(`generate @nx/js:lib ${mylib}`);
-    updateProjectConfig(mylib, (c) => {
+    updateJson(join('libs', mylib, 'project.json'), (c) => {
       c.targets['prebuild'] = {
         command: 'echo prebuild',
       };
@@ -34,8 +35,8 @@ describe('Invoke Runner', () => {
       async function main(){
         const r = await initTasksRunner({});
 
-        await r.invoke({tasks: [{id: '${mylib}:prebuild', target: {project: '${mylib}', target: 'prebuild'}, overrides: {__overrides_unparsed__: ''}}]});
-        await r.invoke({tasks: [{id: '${mylib}:build', target: {project: '${mylib}', target: 'build'}, overrides: {__overrides_unparsed__: ''}}]});
+        await r.invoke({tasks: [{id: '${mylib}:prebuild', target: {project: '${mylib}', target: 'prebuild'}, outputs: [], overrides: {__overrides_unparsed__: ''}}]});
+        await r.invoke({tasks: [{id: '${mylib}:build', target: {project: '${mylib}', target: 'build'}, outputs: [], overrides: {__overrides_unparsed__: ''}}]});
       }
 
       main().then(q => {

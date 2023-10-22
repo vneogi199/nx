@@ -1,7 +1,6 @@
 import {
   addDependenciesToPackageJson,
   addProjectConfiguration,
-  convertNxGenerator,
   formatFiles,
   generateFiles,
   ProjectConfiguration,
@@ -37,6 +36,14 @@ export async function setupVerdaccio(
   };
   if (!tree.exists('project.json')) {
     const { name } = readJson(tree, 'package.json');
+    updateJson(tree, 'package.json', (json) => {
+      if (!json.nx) {
+        json.nx = {
+          includedScripts: [],
+        };
+      }
+      return json;
+    });
     addProjectConfiguration(tree, name, {
       root: '.',
       targets: {
@@ -67,4 +74,3 @@ export async function setupVerdaccio(
 }
 
 export default setupVerdaccio;
-export const setupVerdaccioSchematic = convertNxGenerator(setupVerdaccio);

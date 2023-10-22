@@ -2,6 +2,7 @@ import {
   joinPathFragments,
   parseTargetString,
   readCachedProjectGraph,
+  readNxJson,
 } from '@nx/devkit';
 import { WebpackNxBuildCoordinationPlugin } from '@nx/webpack/src/plugins/webpack-nx-build-coordination-plugin';
 import { DependentBuildableProjectNode } from '@nx/js/src/utils/buildable-libs-utils';
@@ -18,6 +19,7 @@ import { createTmpTsConfigForBuildableLibs } from '../utilities/buildable-libs';
 import { from } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { getRootTsConfigPath } from '@nx/js';
+import { join } from 'path';
 
 type BuildTargetOptions = {
   tsConfig: string;
@@ -34,10 +36,13 @@ export function executeWebpackDevServerBuilder(
 
   const options = normalizeOptions(rawOptions);
 
-  const parsedBrowserTarget = parseTargetString(
-    options.browserTarget,
-    readCachedProjectGraph()
-  );
+  const parsedBrowserTarget = parseTargetString(options.browserTarget, {
+    cwd: context.currentDirectory,
+    projectGraph: readCachedProjectGraph(),
+    projectName: context.target.project,
+    root: context.workspaceRoot,
+    isVerbose: false,
+  });
   const browserTargetProjectConfiguration = readCachedProjectConfiguration(
     parsedBrowserTarget.project
   );
@@ -129,6 +134,7 @@ export function executeWebpackDevServerBuilder(
             // This will occur when workspaceDependencies = []
             if (workspaceDependencies.length > 0) {
               baseWebpackConfig.plugins.push(
+                // @ts-expect-error - difference between angular and webpack plugin definitions bc of webpack versions
                 new WebpackNxBuildCoordinationPlugin(
                   `nx run-many --target=${
                     parsedBrowserTarget.target

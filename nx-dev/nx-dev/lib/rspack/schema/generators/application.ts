@@ -59,11 +59,6 @@ export const schema = {
                 'LESS              [ http://lesscss.org                       ]',
             },
             {
-              value: 'styl',
-              label:
-                'DEPRECATED: Stylus(.styl) [ http://stylus-lang.com           ]',
-            },
-            {
               value: 'none',
               label: 'None',
             },
@@ -108,6 +103,6 @@ export const schema = {
   hidden: false,
   implementation:
     '/packages/rspack/src/generators/application/application#applicationGenerator.ts',
-  path: '/packages/rspack/src/generators/application/schema.json',
+  path: '/api/rspack/src/generators/application/schema.json',
   type: 'generator',
 };

@@ -191,7 +191,7 @@ export function addOrChangeTestTarget(
   } else {
     project.targets[target] = {
       executor: '@nx/vite:test',
-      outputs: [coveragePath],
+      outputs: ['{options.reportsDirectory}'],
       options: testOptions,
     };
   }
@@ -441,14 +441,14 @@ export function moveAndEditIndexHtml(
     const indexHtmlContent = tree.read(indexHtmlPath, 'utf8');
     if (
       !indexHtmlContent.includes(
-        `<script type="module" src="${mainPath}"></script>`
+        `<script type='module' src='${mainPath}'></script>`
       )
     ) {
       tree.write(
         `${projectConfig.root}/index.html`,
         indexHtmlContent.replace(
           '</body>',
-          `<script type="module" src="${mainPath}"></script>
+          `<script type='module' src='${mainPath}'></script>
           </body>`
         )
       );
@@ -461,25 +461,36 @@ export function moveAndEditIndexHtml(
     tree.write(
       `${projectConfig.root}/index.html`,
       `<!DOCTYPE html>
-      <html lang="en">
+      <html lang='en'>
         <head>
-          <meta charset="UTF-8" />
-          <link rel="icon" href="/favicon.ico" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta charset='UTF-8' />
+          <link rel='icon' href='/favicon.ico' />
+          <meta name='viewport' content='width=device-width, initial-scale=1.0' />
           <title>Vite</title>
         </head>
         <body>
-          <div id="root"></div>
-          <script type="module" src="${mainPath}"></script>
+          <div id='root'></div>
+          <script type='module' src='${mainPath}'></script>
         </body>
       </html>`
     );
   }
 }
 
+export interface ViteConfigFileOptions {
+  project: string;
+  includeLib?: boolean;
+  includeVitest?: boolean;
+  inSourceTests?: boolean;
+  testEnvironment?: 'node' | 'jsdom' | 'happy-dom' | 'edge-runtime' | string;
+  rollupOptionsExternal?: string[];
+  imports?: string[];
+  plugins?: string[];
+}
+
 export function createOrEditViteConfig(
   tree: Tree,
-  options: ViteConfigurationGeneratorSchema,
+  options: ViteConfigFileOptions,
   onlyVitest: boolean,
   projectAlreadyHasViteTargets?: TargetFlags
 ) {
@@ -505,32 +516,31 @@ export function createOrEditViteConfig(
         },
         rollupOptions: {
           // External packages that should not be bundled into your library.
-          external: [${
-            options.uiFramework === 'react'
-              ? "'react', 'react-dom', 'react/jsx-runtime'"
-              : ''
-          }]
+          external: [${options.rollupOptionsExternal ?? ''}]
         }
       },`
     : ``;
 
-  const dtsPlugin = onlyVitest
-    ? ''
-    : options.includeLib
-    ? `dts({
-      entryRoot: 'src',
-      tsConfigFilePath: path.join(__dirname, 'tsconfig.lib.json'),
-      skipDiagnostics: true,
-    }),`
-    : '';
+  const imports: string[] = options.imports ? options.imports : [];
 
-  const dtsImportLine = onlyVitest
-    ? ''
-    : options.includeLib
-    ? `import dts from 'vite-plugin-dts';\nimport * as path from 'path';`
-    : '';
+  if (!onlyVitest && options.includeLib) {
+    imports.push(
+      `import dts from 'vite-plugin-dts'`,
+      `import * as path from 'path'`
+    );
+  }
 
   let viteConfigContent = '';
+
+  const plugins = options.plugins
+    ? [...options.plugins, `nxViteTsPaths()`]
+    : [`nxViteTsPaths()`];
+
+  if (!onlyVitest && options.includeLib) {
+    plugins.push(
+      `dts({ entryRoot: 'src', tsConfigFilePath: path.join(__dirname, 'tsconfig.lib.json'), skipDiagnostics: true })`
+    );
+  }
 
   const testOption = options.includeVitest
     ? `test: {
@@ -554,15 +564,6 @@ export function createOrEditViteConfig(
   },`
     : '';
 
-  const reactPluginImportLine =
-    options.uiFramework === 'react'
-      ? options.compiler === 'swc'
-        ? `import react from '@vitejs/plugin-react-swc';`
-        : `import react from '@vitejs/plugin-react';`
-      : '';
-
-  const reactPlugin = options.uiFramework === 'react' ? `react(),` : '';
-
   const devServerOption = onlyVitest
     ? ''
     : options.includeLib
@@ -583,24 +584,10 @@ export function createOrEditViteConfig(
       host: 'localhost',
     },`;
 
-  const pluginOption = `
-    plugins: [
-      ${dtsPlugin}
-      ${reactPlugin}
-      viteTsConfigPaths({
-        root: '${offsetFromRoot(projectConfig.root)}',
-      }),
-    ],
-    `;
-
   const workerOption = `
     // Uncomment this if you are using workers. 
     // worker: {
-    //  plugins: [
-    //    viteTsConfigPaths({
-    //      root: '${offsetFromRoot(projectConfig.root)}',
-    //    }),
-    //  ],
+    //  plugins: [ nxViteTsPaths() ],
     // },`;
 
   const cacheDir = `cacheDir: '${offsetFromRoot(
@@ -613,9 +600,8 @@ export function createOrEditViteConfig(
       viteConfigPath,
       options,
       buildOption,
-      dtsPlugin,
-      dtsImportLine,
-      pluginOption,
+      imports,
+      plugins,
       testOption,
       cacheDir,
       offsetFromRoot(projectConfig.root),
@@ -625,17 +611,17 @@ export function createOrEditViteConfig(
   }
 
   viteConfigContent = `
-      /// <reference types="vitest" />
+      /// <reference types='vitest' />
       import { defineConfig } from 'vite';
-      ${reactPluginImportLine}
-      import viteTsConfigPaths from 'vite-tsconfig-paths';
-      ${dtsImportLine}
+      ${imports.join(';\n')}${imports.length ? ';' : ''}
+      import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
       
       export default defineConfig({
         ${cacheDir}
         ${devServerOption}
         ${previewServerOption}
-        ${pluginOption}
+        
+        plugins: [${plugins.join(',\n')}],
         ${workerOption}
         ${buildOption}
         ${defineOption}
@@ -780,21 +766,28 @@ export async function handleUnknownExecutors(projectName: string) {
 function handleViteConfigFileExists(
   tree: Tree,
   viteConfigPath: string,
-  options: ViteConfigurationGeneratorSchema,
+  options: ViteConfigFileOptions,
   buildOption: string,
-  dtsPlugin: string,
-  dtsImportLine: string,
-  pluginOption: string,
+  imports: string[],
+  plugins: string[],
   testOption: string,
   cacheDir: string,
   offsetFromRoot: string,
   projectAlreadyHasViteTargets?: TargetFlags
 ) {
-  if (projectAlreadyHasViteTargets.build && projectAlreadyHasViteTargets.test) {
+  if (
+    projectAlreadyHasViteTargets?.build &&
+    projectAlreadyHasViteTargets?.test
+  ) {
     return;
   }
 
-  logger.info(`vite.config.ts already exists for project ${options.project}.`);
+  if (process.env.NX_VERBOSE_LOGGING === 'true') {
+    logger.info(
+      `vite.config.ts already exists for project ${options.project}.`
+    );
+  }
+
   const buildOptionObject = {
     lib: {
       entry: 'src/index.ts',
@@ -803,10 +796,7 @@ function handleViteConfigFileExists(
       formats: ['es', 'cjs'],
     },
     rollupOptions: {
-      external:
-        options.uiFramework === 'react'
-          ? ['react', 'react-dom', 'react/jsx-runtime']
-          : [],
+      external: options.rollupOptionsExternal ?? [],
     },
   };
 
@@ -824,13 +814,12 @@ function handleViteConfigFileExists(
     viteConfigPath,
     buildOption,
     buildOptionObject,
-    dtsPlugin,
-    dtsImportLine,
-    pluginOption,
+    imports,
+    plugins,
     testOption,
     testOptionObject,
     cacheDir,
-    projectAlreadyHasViteTargets
+    projectAlreadyHasViteTargets ?? {}
   );
 
   if (!changed) {
@@ -841,9 +830,5 @@ function handleViteConfigFileExists(
         
         `
     );
-  } else {
-    logger.info(`
-      Vite configuration file (${viteConfigPath}) has been updated with the required settings for the new target(s).
-      `);
   }
 }

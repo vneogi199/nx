@@ -1,4 +1,4 @@
-import { getCommandAsString, getOutputs } from '../../tasks-runner/utils';
+import { getCommandAsString } from '../../tasks-runner/utils';
 import * as yargs from 'yargs';
 import type { NxArgs } from '../../utils/command-line-utils';
 import {
@@ -10,14 +10,12 @@ import {
   mapTargetDefaultsToDependencies,
 } from '../../tasks-runner/create-task-graph';
 import { NxJsonConfiguration } from '../../config/nx-json';
-import { Workspaces } from '../../config/workspaces';
 import { InProcessTaskHasher } from '../../hasher/task-hasher';
 import { hashTask } from '../../hasher/hash-task';
-import { workspaceRoot } from '../../utils/workspace-root';
 import { getPackageManagerCommand } from '../../utils/package-manager';
-import { fileHasher } from '../../hasher/file-hasher';
 import { printAffectedDeprecationMessage } from './command-object';
 import { logger, NX_PREFIX } from '../../utils/logger';
+import { getTaskSpecificEnv } from '../../tasks-runner/task-env';
 
 /**
  * @deprecated Use showProjectsHandler, generateGraph, or affected (without the print-affected mode) instead.
@@ -63,7 +61,6 @@ async function createTasks(
   nxJson: NxJsonConfiguration,
   overrides: yargs.Arguments
 ) {
-  const workspaces = new Workspaces(workspaceRoot);
   const defaultDependencyConfigs = mapTargetDefaultsToDependencies(
     nxJson.targetDefaults
   );
@@ -75,20 +72,21 @@ async function createTasks(
     nxArgs.configuration,
     overrides
   );
-  const hasher = new InProcessTaskHasher(
-    {},
-    [],
-    projectGraph,
-    taskGraph,
-    nxJson,
-    {},
-    fileHasher
-  );
+  const hasher = new InProcessTaskHasher({}, [], projectGraph, nxJson, {});
   const execCommand = getPackageManagerCommand().exec;
   const tasks = Object.values(taskGraph.tasks);
 
   await Promise.all(
-    tasks.map((t) => hashTask(workspaces, hasher, projectGraph, {} as any, t))
+    tasks.map((t) =>
+      hashTask(
+        hasher,
+        projectGraph,
+        taskGraph,
+        t,
+        // This loads dotenv files for the task
+        getTaskSpecificEnv(t)
+      )
+    )
   );
 
   return tasks.map((task) => ({
@@ -97,7 +95,7 @@ async function createTasks(
     target: task.target,
     hash: task.hash,
     command: getCommandAsString(execCommand, task),
-    outputs: getOutputs(projectGraph.nodes, task),
+    outputs: task.outputs,
   }));
 }
 

@@ -22,7 +22,6 @@
         "component-cypress-spec",
         "component-story",
         "component-test",
-        "convert-tslint-to-eslint",
         "downgrade-module",
         "init",
         "karma",
@@ -186,7 +185,6 @@
       "executors": [],
       "generators": [
         "application",
-        "convert-tslint-to-eslint",
         "init",
         "library",
         "class",
@@ -359,6 +357,16 @@
     "schemas": {
       "executors": ["dev-server", "build", "test"],
       "generators": ["init", "configuration", "vitest"]
+    }
+  },
+  {
+    "name": "vue",
+    "packageName": "vue",
+    "description": "The Vue plugin for Nx contains executors and generators for managing Vue applications and libraries within an Nx workspace. It provides:\n\n\n- Integration with libraries such as Jest, Cypress, and Storybook.\n\n- Generators for applications, libraries, components, hooks, and more.\n\n- Library build support for publishing packages to npm or other registries.\n\n- Utilities for automatic workspace refactoring.",
+    "path": "generated/packages/vite.json",
+    "schemas": {
+      "executors": [],
+      "generators": ["init", "library", "application", "component"]
     }
   },
   {

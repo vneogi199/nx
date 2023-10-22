@@ -106,7 +106,7 @@ export function withWeb(pluginOptions: WithWebOptions = {}): NxWebpackPlugin {
     if (stylesOptimization) {
       minimizer.push(
         new CssMinimizerPlugin({
-          test: /\.(?:css|scss|sass|less|styl)$/,
+          test: /\.(?:css|scss|sass|less)$/,
         })
       );
     }
@@ -199,21 +199,6 @@ export function withWeb(pluginOptions: WithWebOptions = {}): NxWebpackPlugin {
           },
         ],
       },
-      {
-        test: /\.module\.styl$/,
-        exclude: globalStylePaths,
-        use: [
-          ...getCommonLoadersForCssModules(mergedOptions, includePaths),
-          {
-            loader: require.resolve('stylus-loader'),
-            options: {
-              stylusOptions: {
-                include: includePaths,
-              },
-            },
-          },
-        ],
-      },
     ];
 
     const globalCssRules: RuleSetRule[] = [
@@ -254,22 +239,6 @@ export function withWeb(pluginOptions: WithWebOptions = {}): NxWebpackPlugin {
               lessOptions: {
                 javascriptEnabled: true,
                 ...lessPathOptions,
-              },
-            },
-          },
-        ],
-      },
-      {
-        test: /\.styl$/,
-        exclude: globalStylePaths,
-        use: [
-          ...getCommonLoadersForGlobalCss(mergedOptions, includePaths),
-          {
-            loader: require.resolve('stylus-loader'),
-            options: {
-              sourceMap: !!mergedOptions.sourceMap,
-              stylusOptions: {
-                include: includePaths,
               },
             },
           },
@@ -320,27 +289,11 @@ export function withWeb(pluginOptions: WithWebOptions = {}): NxWebpackPlugin {
           },
         ],
       },
-      {
-        test: /\.styl$/,
-        include: globalStylePaths,
-        use: [
-          ...getCommonLoadersForGlobalStyle(mergedOptions, includePaths),
-          {
-            loader: require.resolve('stylus-loader'),
-            options: {
-              sourceMap: !!mergedOptions.sourceMap,
-              stylusOptions: {
-                include: includePaths,
-              },
-            },
-          },
-        ],
-      },
     ];
 
     const rules: RuleSetRule[] = [
       {
-        test: /\.css$|\.scss$|\.sass$|\.less$|\.styl$/,
+        test: /\.css$|\.scss$|\.sass$|\.less$/,
         oneOf: [...cssModuleRules, ...globalCssRules, ...globalStyleRules],
       },
     ];
@@ -409,20 +362,38 @@ export function withWeb(pluginOptions: WithWebOptions = {}): NxWebpackPlugin {
       ...config.module,
       rules: [
         ...(config.module.rules ?? []),
+        // Images: Inline small images, and emit a separate file otherwise.
         {
-          test: /\.(bmp|png|jpe?g|gif|webp|avif)$/,
+          test: /\.(avif|bmp|gif|ico|jpe?g|png|webp)$/,
           type: 'asset',
           parser: {
             dataUrlCondition: {
               maxSize: 10_000, // 10 kB
             },
           },
+          generator: {
+            filename: `[name]${hashFormat.file}[ext]`,
+          },
         },
+        // SVG: same as image but we need to separate it so it can be swapped for SVGR in the React plugin.
         {
-          test: /\.(eot|svg|cur|jpg|png|webp|gif|otf|ttf|woff|woff2|ani)$/,
-          loader: require.resolve('file-loader'),
-          options: {
-            name: `[name]${hashFormat.file}.[ext]`,
+          test: /\.svg$/,
+          type: 'asset',
+          parser: {
+            dataUrlCondition: {
+              maxSize: 10_000, // 10 kB
+            },
+          },
+          generator: {
+            filename: `[name]${hashFormat.file}[ext]`,
+          },
+        },
+        // Fonts: Emit separate file and export the URL.
+        {
+          test: /\.(eot|otf|ttf|woff|woff2)$/,
+          type: 'asset/resource',
+          generator: {
+            filename: `[name]${hashFormat.file}[ext]`,
           },
         },
         ...rules,

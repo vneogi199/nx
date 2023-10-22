@@ -35,6 +35,24 @@ export interface NxArgs {
   nxBail?: boolean;
   nxIgnoreCycles?: boolean;
   type?: string;
+  batch?: boolean;
+}
+
+export function createOverrides(__overrides_unparsed__: string[] = []) {
+  let overrides =
+    yargsParser(__overrides_unparsed__, {
+      configuration: {
+        'camel-case-expansion': false,
+        'dot-notation': true,
+      },
+    }) || {};
+
+  if (!overrides._ || overrides._.length === 0) {
+    delete overrides._;
+  }
+
+  overrides.__overrides_unparsed__ = __overrides_unparsed__;
+  return overrides;
 }
 
 export function splitArgsIntoNxArgsAndOverrides(
@@ -66,18 +84,8 @@ export function splitArgsIntoNxArgsAndOverrides(
   }
 
   const nxArgs: RawNxArgs = args;
-  let overrides = yargsParser(args.__overrides_unparsed__ as string[], {
-    configuration: {
-      'camel-case-expansion': false,
-      'dot-notation': true,
-    },
-  });
 
-  if (!overrides._ || overrides._.length === 0) {
-    delete overrides._;
-  }
-
-  overrides.__overrides_unparsed__ = args.__overrides_unparsed__;
+  let overrides = createOverrides(args.__overrides_unparsed__);
   delete (nxArgs as any).$0;
   delete (nxArgs as any).__overrides_unparsed__;
 
@@ -173,10 +181,14 @@ export function splitArgsIntoNxArgsAndOverrides(
   } else if (
     args['parallel'] === 'true' ||
     args['parallel'] === true ||
-    args['parallel'] === ''
+    args['parallel'] === '' ||
+    process.env.NX_PARALLEL // dont require passing --parallel if NX_PARALLEL is set
   ) {
     nxArgs['parallel'] = Number(
-      nxArgs['maxParallel'] || nxArgs['max-parallel'] || 3
+      nxArgs['maxParallel'] ||
+        nxArgs['max-parallel'] ||
+        process.env.NX_PARALLEL ||
+        3
     );
   } else if (args['parallel'] !== undefined) {
     nxArgs['parallel'] = Number(args['parallel']);
@@ -322,7 +334,7 @@ export function getProjectRoots(
   return projectNames.map((name) => nodes[name].data.root);
 }
 
-export function readGraphFileFromGraphArg({ graph }: NxArgs) {
+export function readGraphFileFromGraphArg({ graph }: Pick<NxArgs, 'graph'>) {
   return typeof graph === 'string' && graph !== 'true' && graph !== ''
     ? graph
     : undefined;

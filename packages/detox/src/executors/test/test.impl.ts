@@ -4,7 +4,7 @@ import {
   readTargetOptions,
 } from '@nx/devkit';
 import { names } from '@nx/devkit';
-import { join } from 'path';
+import { resolve as pathResolve } from 'path';
 import { ChildProcess, fork } from 'child_process';
 
 import { DetoxBuildOptions } from '../build/schema';
@@ -27,10 +27,7 @@ export default async function* detoxTestExecutor(
 
   try {
     if (!options.reuse && options.buildTarget) {
-      const buildTarget = parseTargetString(
-        options.buildTarget,
-        context.projectGraph
-      );
+      const buildTarget = parseTargetString(options.buildTarget, context);
       const buildOptions = readTargetOptions<DetoxBuildOptions>(
         buildTarget,
         context
@@ -59,10 +56,10 @@ function runCliTest(
 ) {
   return new Promise((resolve, reject) => {
     childProcess = fork(
-      join(workspaceRoot, './node_modules/detox/local-cli/cli.js'),
+      require.resolve('detox/local-cli/cli.js'),
       ['test', ...createDetoxTestOptions(options)],
       {
-        cwd: join(workspaceRoot, projectRoot),
+        cwd: pathResolve(workspaceRoot, projectRoot),
         env: process.env,
       }
     );

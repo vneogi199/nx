@@ -9,7 +9,7 @@ import {
   updateNxJson,
   writeJson,
 } from '@nx/devkit';
-import { Linter, lintInitGenerator } from '@nx/linter';
+import { Linter, lintInitGenerator } from '@nx/eslint';
 import {
   getRootTsConfigPathInTree,
   initGenerator as jsInitGenerator,
@@ -21,6 +21,7 @@ import { angularDevkitVersion, nxVersion } from '../../../utils/versions';
 import type { ProjectMigrator } from '../migrators';
 import type { GeneratorOptions } from '../schema';
 import type { WorkspaceRootFileTypesInfo } from './types';
+import { join } from 'path';
 
 export function validateWorkspace(tree: Tree): void {
   const errors: string[] = [];
@@ -51,19 +52,6 @@ export function createNxJson(
     affected: {
       defaultBase: options.defaultBase ?? deduceDefaultBase(),
     },
-    tasksRunnerOptions: {
-      default: {
-        runner: 'nx/tasks-runners/default',
-        options: {
-          cacheableOperations: [
-            'build',
-            targets.test ? 'test' : undefined,
-            targets.lint ? 'lint' : undefined,
-            targets.e2e ? 'e2e' : undefined,
-          ].filter(Boolean),
-        },
-      },
-    },
     namedInputs: {
       sharedGlobals: [],
       default: ['{projectRoot}/**/*', 'sharedGlobals'],
@@ -76,27 +64,37 @@ export function createNxJson(
               '!{projectRoot}/karma.conf.js',
             ]
           : []),
-        targets.lint ? '!{projectRoot}/.eslintrc.json' : undefined,
+        ...(targets.lint
+          ? ['!{projectRoot}/.eslintrc.json', '!{projectRoot}/eslint.config.js']
+          : []),
       ].filter(Boolean),
     },
     targetDefaults: {
       build: {
         dependsOn: ['^build'],
         inputs: ['production', '^production'],
+        cache: true,
       },
       test: targets.test
         ? {
             inputs: ['default', '^production', '{workspaceRoot}/karma.conf.js'],
+            cache: true,
           }
         : undefined,
       lint: targets.lint
         ? {
-            inputs: ['default', '{workspaceRoot}/.eslintrc.json'],
+            inputs: [
+              'default',
+              '{workspaceRoot}/.eslintrc.json',
+              '{workspaceRoot}/eslint.config.js',
+            ],
+            cache: true,
           }
         : undefined,
       e2e: targets.e2e
         ? {
             inputs: ['default', '^production'],
+            cache: true,
           }
         : undefined,
     },
@@ -268,7 +266,7 @@ export async function createWorkspaceFiles(tree: Tree): Promise<void> {
 
   await jsInitGenerator(tree, { skipFormat: true });
 
-  generateFiles(tree, joinPathFragments(__dirname, '../files/root'), '.', {
+  generateFiles(tree, join(__dirname, '../files/root'), '.', {
     tmpl: '',
     dot: '.',
     rootTsConfigPath: getRootTsConfigPathInTree(tree),

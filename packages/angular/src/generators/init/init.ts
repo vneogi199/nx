@@ -1,4 +1,3 @@
-import { cypressInitGenerator } from '@nx/cypress';
 import {
   addDependenciesToPackageJson,
   ensurePackage,
@@ -11,7 +10,7 @@ import {
   updateNxJson,
 } from '@nx/devkit';
 import { jestInitGenerator } from '@nx/jest';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 import { initGenerator as jsInitGenerator } from '@nx/js';
 import { E2eTestRunner, UnitTestRunner } from '../../utils/test-runners';
 import {
@@ -21,6 +20,7 @@ import {
 } from '../utils/version-utils';
 import type { PackageVersions } from '../../utils/backward-compatible-versions';
 import { Schema } from './schema';
+import { nxVersion } from '../../utils/versions';
 
 export async function angularInitGenerator(
   tree: Tree,
@@ -198,7 +198,18 @@ async function addE2ETestRunner(
 ): Promise<GeneratorCallback> {
   switch (options.e2eTestRunner) {
     case E2eTestRunner.Cypress:
+      const { cypressInitGenerator } = ensurePackage<
+        typeof import('@nx/cypress')
+      >('@nx/cypress', nxVersion);
       return cypressInitGenerator(tree, {
+        skipPackageJson: options.skipPackageJson,
+      });
+    case E2eTestRunner.Playwright:
+      const { initGenerator: playwrightInitGenerator } = ensurePackage<
+        typeof import('@nx/playwright')
+      >('@nx/playwright', nxVersion);
+      return playwrightInitGenerator(tree, {
+        skipFormat: true,
         skipPackageJson: options.skipPackageJson,
       });
     default:
@@ -236,7 +247,7 @@ function addPrettierIgnoreEntry(tree: Tree, entry: string): void {
   }
 
   let content = tree.read('.prettierignore', 'utf-8');
-  if (/^\.angular$/gm.test(content)) {
+  if (/^\.angular(\/cache)?$/gm.test(content)) {
     return;
   }
 

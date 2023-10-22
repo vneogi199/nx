@@ -1,6 +1,5 @@
 import {
   addDependenciesToPackageJson,
-  convertNxGenerator,
   GeneratorCallback,
   getProjects,
   readNxJson,
@@ -68,7 +67,7 @@ function createJestConfig(tree: Tree, options: NormalizedSchema) {
     addTestInputs(tree);
   }
   if (options.rootProject) {
-    // we don't want any config to be made because the `jestProjectGenerator`
+    // we don't want any config to be made because the `configurationGenerator` will do it.
     // will copy the template config file
     return;
   }
@@ -100,10 +99,12 @@ function createJestConfig(tree: Tree, options: NormalizedSchema) {
       const isProjectConfig = jestTarget?.options?.jestConfig === rootJestPath;
       // if root project doesn't have jest target, there's nothing to migrate
       if (isProjectConfig) {
-        const jestAppConfig = `jest.config.app.${options.js ? 'js' : 'ts'}`;
+        const jestProjectConfig = `jest.config.${
+          rootProjectConfig.projectType === 'application' ? 'app' : 'lib'
+        }.${options.js ? 'js' : 'ts'}`;
 
-        tree.rename(rootJestPath, jestAppConfig);
-        jestTarget.options.jestConfig = jestAppConfig;
+        tree.rename(rootJestPath, jestProjectConfig);
+        jestTarget.options.jestConfig = jestProjectConfig;
         updateProjectConfiguration(tree, rootProject, rootProjectConfig);
       }
       // generate new global config as it was move to project config or is missing
@@ -124,7 +125,11 @@ function addTestInputs(tree: Tree) {
       // Remove tsconfig.spec.json
       '!{projectRoot}/tsconfig.spec.json',
       // Remove jest.config.js/ts
-      '!{projectRoot}/jest.config.[jt]s'
+      '!{projectRoot}/jest.config.[jt]s',
+      // Remove test-setup.js/ts
+      // TODO(meeroslav) this should be standardized
+      '!{projectRoot}/src/test-setup.[jt]s',
+      '!{projectRoot}/test-setup.[jt]s'
     );
     // Dedupe and set
     nxJson.namedInputs.production = Array.from(new Set(productionFileSet));
@@ -226,5 +231,3 @@ function normalizeOptions(options: JestInitSchema) {
 }
 
 export default jestInitGenerator;
-
-export const jestInitSchematic = convertNxGenerator(jestInitGenerator);

@@ -61,7 +61,6 @@ export function nxComponentTestingPreset(
   devServer: ViteDevServer | WebpackDevServer;
   videosFolder: string;
   screenshotsFolder: string;
-  video: boolean;
   chromeWebSecurity: boolean;
 } {
   const normalizedProjectRootPath = ['.ts', '.js'].some((ext) =>
@@ -84,7 +83,9 @@ export function nxComponentTestingPreset(
           const viteConfigPath = findViteConfig(normalizedProjectRootPath);
 
           const { mergeConfig, loadConfigFromFile, searchForWorkspaceRoot } =
-            await import('vite');
+            await (Function('return import("vite")')() as Promise<
+              typeof import('vite')
+            >);
 
           const resolved = await loadConfigFromFile(
             {
@@ -144,7 +145,11 @@ export function nxComponentTestingPreset(
       );
     }
 
-    webpackConfig = buildTargetWebpack(graph, buildTarget, ctProjectName);
+    webpackConfig = buildTargetWebpack(
+      ctExecutorContext,
+      buildTarget,
+      ctProjectName
+    );
   } catch (e) {
     logger.warn(
       stripIndents`Unable to build a webpack config with the project graph. 
@@ -201,10 +206,11 @@ function withSchemaDefaults(target: Target, context: ExecutorContext) {
 }
 
 function buildTargetWebpack(
-  graph: ProjectGraph,
+  ctx: ExecutorContext,
   buildTarget: string,
   componentTestingProjectName: string
 ) {
+  const graph = ctx.projectGraph;
   const parsed = parseTargetString(buildTarget, graph);
 
   const buildableProjectConfig = graph.nodes[parsed.project]?.data;
@@ -247,7 +253,9 @@ function buildTargetWebpack(
   if (options.webpackConfig) {
     customWebpack = resolveCustomWebpackConfig(
       options.webpackConfig,
-      options.tsConfig
+      options.tsConfig.startsWith(context.root)
+        ? options.tsConfig
+        : join(context.root, options.tsConfig)
     );
   }
 

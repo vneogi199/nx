@@ -121,7 +121,7 @@ When you run a task, Nx uses the inputs for your task to create a hash that is u
 
 If this index does not exist, Nx runs the command and if the command succeeds, it stores the result in the cache.
 
-{% card title="More On Customizing Inputs" description="See the Customizing Inputs Guide for more details on how to set inputs for your tasks." url="/more-concepts/customizing-inputs" /%}
+{% card title="More On Customizing Inputs" description="See the Customizing Inputs Guide for more details on how to set inputs for your tasks." url="/recipes/running-tasks/customizing-inputs" /%}
 
 ### Outputs
 
@@ -162,7 +162,7 @@ Here are the outputs defined for the `shared-ui` project:
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "options": {
         "lintFilePatterns": ["shared/ui/**/*.ts", "shared/ui/**/*.html"]
       }
@@ -262,7 +262,7 @@ npx nx affected -t test
 
 This can be particularly helpful in CI pipelines for larger repos, where most commits only affect a small subset of the entire workspace.
 
-{% card title="Affected Documentation" description="Checkout Affected documentation for more details" url="/packages/nx/documents/affected" /%}
+{% card title="Affected Documentation" description="Checkout Affected documentation for more details" url="/nx-api/nx/documents/affected" /%}
 
 ## What's Next
 

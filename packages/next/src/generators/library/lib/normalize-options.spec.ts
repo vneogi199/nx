@@ -1,5 +1,5 @@
 import type { Tree } from '@nx/devkit';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { normalizeOptions } from './normalize-options';
 
@@ -10,8 +10,8 @@ describe('normalizeOptions', () => {
     tree = createTreeWithEmptyWorkspace();
   });
 
-  it('should set importPath and projectRoot', () => {
-    const options = normalizeOptions(tree, {
+  it('should set importPath and projectRoot', async () => {
+    const options = await normalizeOptions(tree, {
       name: 'my-lib',
       style: 'css',
       linter: Linter.None,

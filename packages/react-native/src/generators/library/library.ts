@@ -1,11 +1,9 @@
 import {
   addProjectConfiguration,
-  convertNxGenerator,
   ensurePackage,
   formatFiles,
   generateFiles,
   GeneratorCallback,
-  getWorkspaceLayout,
   joinPathFragments,
   names,
   offsetFromRoot,
@@ -20,7 +18,11 @@ import { addTsConfigPath, getRelativePathToRootTsConfig } from '@nx/js';
 import init from '../init/init';
 import { addLinting } from '../../utils/add-linting';
 import { addJest } from '../../utils/add-jest';
-import { nxVersion } from '../../utils/versions';
+import {
+  nxVersion,
+  reactNativeVersion,
+  reactVersion,
+} from '../../utils/versions';
 import { NormalizedSchema, normalizeOptions } from './lib/normalize-options';
 import { Schema } from './schema';
 
@@ -28,7 +30,17 @@ export async function reactNativeLibraryGenerator(
   host: Tree,
   schema: Schema
 ): Promise<GeneratorCallback> {
-  const options = normalizeOptions(host, schema);
+  return await reactNativeLibraryGeneratorInternal(host, {
+    projectNameAndRootFormat: 'derived',
+    ...schema,
+  });
+}
+
+export async function reactNativeLibraryGeneratorInternal(
+  host: Tree,
+  schema: Schema
+): Promise<GeneratorCallback> {
+  const options = await normalizeOptions(host, schema);
   if (options.publishable === true && !schema.importPath) {
     throw new Error(
       `For publishable libs you have to provide a proper "--importPath" which needs to be a valid npm package name (e.g. my-awesome-lib or @myorg/my-lib)`
@@ -101,7 +113,6 @@ async function addProject(host: Tree, options: NormalizedSchema) {
       nxVersion
     );
 
-    const { libsDir } = getWorkspaceLayout(host);
     const external = [
       'react/jsx-runtime',
       'react-native',
@@ -113,7 +124,7 @@ async function addProject(host: Tree, options: NormalizedSchema) {
       executor: '@nx/rollup:rollup',
       outputs: ['{options.outputPath}'],
       options: {
-        outputPath: `dist/${libsDir}/${options.projectDirectory}`,
+        outputPath: `dist/${options.projectRoot}`,
         tsConfig: `${options.projectRoot}/tsconfig.lib.json`,
         project: `${options.projectRoot}/package.json`,
         entryFile: maybeJs(options, `${options.projectRoot}/src/index.ts`),
@@ -170,7 +181,6 @@ function createFiles(host: Tree, options: NormalizedSchema) {
     {
       ...options,
       ...names(options.name),
-      tmpl: '',
       offsetFromRoot: offsetFromRoot(options.projectRoot),
       rootTsConfigPath: getRelativePathToRootTsConfig(
         host,
@@ -193,6 +203,10 @@ function createFiles(host: Tree, options: NormalizedSchema) {
 function updateLibPackageNpmScope(host: Tree, options: NormalizedSchema) {
   return updateJson(host, `${options.projectRoot}/package.json`, (json) => {
     json.name = options.importPath;
+    json.peerDependencies = {
+      react: reactVersion,
+      'react-native': reactNativeVersion,
+    };
     return json;
   });
 }
@@ -204,6 +218,3 @@ function maybeJs(options: NormalizedSchema, path: string): string {
 }
 
 export default reactNativeLibraryGenerator;
-export const reactNativeLibrarySchematic = convertNxGenerator(
-  reactNativeLibraryGenerator
-);

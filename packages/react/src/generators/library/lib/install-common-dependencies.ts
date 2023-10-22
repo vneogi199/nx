@@ -6,12 +6,12 @@ import {
 } from '@nx/devkit';
 import { addSwcDependencies } from '@nx/js/src/utils/swc/add-swc-dependencies';
 import {
+  babelCoreVersion,
   babelPresetReactVersion,
   lessVersion,
   reactDomVersion,
   reactVersion,
   sassVersion,
-  stylusVersion,
 } from '../../../utils/versions';
 import { NormalizedSchema } from '../schema';
 
@@ -33,9 +33,6 @@ export function installCommonDependencies(
       case 'less':
         devDependencies['less'] = lessVersion;
         break;
-      case 'styl': // @TODO(17): deprecated, going to be removed in Nx 17
-        devDependencies['stylus'] = stylusVersion;
-        break;
     }
   }
 
@@ -56,7 +53,10 @@ export function installCommonDependencies(
       addDependenciesToPackageJson(
         host,
         {},
-        { '@babel/preset-react': babelPresetReactVersion }
+        {
+          '@babel/preset-react': babelPresetReactVersion,
+          '@babel/core': babelCoreVersion,
+        }
       )
     );
   }

@@ -17,7 +17,7 @@ export function categorizeRelatedDocuments(
     {
       id: 'concepts',
       name: 'Concepts',
-      matchers: ['/concepts/', '/more-concepts/'],
+      matchers: ['/concepts/', '/concepts/more-concepts/'],
       relatedDocuments: [],
     },
     {
@@ -29,7 +29,7 @@ export function categorizeRelatedDocuments(
     {
       id: 'reference',
       name: 'Reference',
-      matchers: ['/workspace/', '/packages/'],
+      matchers: ['/workspace/', '/nx-api/'],
       relatedDocuments: [],
     },
     {

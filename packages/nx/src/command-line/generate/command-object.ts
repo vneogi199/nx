@@ -1,4 +1,5 @@
 import { CommandModule, Argv } from 'yargs';
+import { getCwd } from '../../utils/path';
 import { linkToNxDevAndExamples } from '../yargs-utils/documentation';
 
 export const yargsGenerateCommand: CommandModule = {
@@ -11,26 +12,7 @@ export const yargsGenerateCommand: CommandModule = {
     // Remove the command from the args
     args._ = args._.slice(1);
 
-    process.exit(
-      await (await import('./generate')).generate(process.cwd(), args)
-    );
-  },
-};
-
-/**
- * @deprecated(v17): Remove `workspace-generator in v17. Use local plugins.
- */
-export const yargsWorkspaceGeneratorCommand: CommandModule = {
-  command: 'workspace-generator [generator]',
-  describe: 'Runs a workspace generator from the tools/generators directory',
-  deprecated:
-    'Use a local plugin instead. See: https://nx.dev/deprecated/workspace-generators',
-  aliases: ['workspace-schematic [schematic]'],
-  builder: async (yargs) =>
-    linkToNxDevAndExamples(withGenerateOptions(yargs), 'workspace-generator'),
-  handler: async (args) => {
-    await (await import('./generate')).workspaceGenerators(args);
-    process.exit(0);
+    process.exit(await (await import('./generate')).generate(getCwd(), args));
   },
 };
 

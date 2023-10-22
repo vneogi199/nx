@@ -1,14 +1,34 @@
 import { Argv } from 'yargs';
 
-export function withExcludeOption(yargs: Argv) {
+interface ExcludeOptions {
+  exclude: string[];
+}
+
+export function withExcludeOption(yargs: Argv): Argv<ExcludeOptions> {
   return yargs.option('exclude', {
     describe: 'Exclude certain projects from being processed',
     type: 'string',
     coerce: parseCSV,
-  });
+  }) as any;
 }
 
-export function withRunOptions(yargs: Argv) {
+export interface RunOptions {
+  exclude: string;
+  parallel: string;
+  maxParallel: number;
+  runner: string;
+  prod: boolean;
+  graph: string;
+  verbose: boolean;
+  nxBail: boolean;
+  nxIgnoreCycles: boolean;
+  skipNxCache: boolean;
+  cloud: boolean;
+  dte: boolean;
+  batch: boolean;
+}
+
+export function withRunOptions<T>(yargs: Argv<T>): Argv<T & RunOptions> {
   return withExcludeOption(yargs)
     .option('parallel', {
       describe: 'Max number of parallel processes [default is 3]',
@@ -47,17 +67,17 @@ export function withRunOptions(yargs: Argv) {
       describe:
         'Prints additional information about the commands (e.g., stack traces)',
     })
-    .option('nx-bail', {
+    .option('nxBail', {
       describe: 'Stop command execution after the first failed task',
       type: 'boolean',
       default: false,
     })
-    .option('nx-ignore-cycles', {
+    .option('nxIgnoreCycles', {
       describe: 'Ignore cycles in the task graph',
       type: 'boolean',
       default: false,
     })
-    .options('skip-nx-cache', {
+    .options('skipNxCache', {
       describe:
         'Rerun the tasks even when the results are available in the cache',
       type: 'boolean',
@@ -70,7 +90,7 @@ export function withRunOptions(yargs: Argv) {
     .options('dte', {
       type: 'boolean',
       hidden: true,
-    });
+    }) as Argv<Omit<RunOptions, 'exclude' | 'batch'>> as any;
 }
 
 export function withTargetAndConfigurationOption(
@@ -95,6 +115,17 @@ export function withConfiguration(yargs: Argv) {
     type: 'string',
     alias: 'c',
   });
+}
+
+export function withBatch(yargs: Argv) {
+  return yargs.options('batch', {
+    type: 'boolean',
+    describe: 'Run task(s) in batches for executors which support batches',
+    coerce: (v) => {
+      return v || process.env.NX_BATCH_MODE === 'true';
+    },
+    default: false,
+  }) as any;
 }
 
 export function withAffectedOptions(yargs: Argv) {
@@ -146,7 +177,17 @@ export function withAffectedOptions(yargs: Argv) {
     });
 }
 
-export function withRunManyOptions(yargs: Argv) {
+export interface RunManyOptions extends RunOptions {
+  projects: string[];
+  /**
+   * @deprecated This is deprecated
+   */
+  all: boolean;
+}
+
+export function withRunManyOptions<T>(
+  yargs: Argv<T>
+): Argv<T & RunManyOptions> {
   return withRunOptions(yargs)
     .parserConfiguration({
       'strip-dashed': true,
@@ -161,19 +202,26 @@ export function withRunManyOptions(yargs: Argv) {
         'Projects to run. (comma/space delimited project names and/or patterns)',
     })
     .option('all', {
-      describe: '[deprecated] Run the target on all projects in the workspace',
+      describe:
+        '[deprecated] `run-many` runs all targets on all projects in the workspace if no projects are provided. This option is no longer required.',
       type: 'boolean',
       default: true,
-    });
+    }) as Argv<T & RunManyOptions>;
 }
 
-export function withOverrides(args: any): any {
-  args.__overrides_unparsed__ = (args['--'] ?? args._.slice(1)).map((v) =>
-    v.toString()
+export function withOverrides<T extends { _: Array<string | number> }>(
+  args: T,
+  commandLevel: number = 1
+): T & { __overrides_unparsed__: string[] } {
+  const unparsedArgs: string[] = (args['--'] ?? args._.slice(commandLevel)).map(
+    (v) => v.toString()
   );
   delete args['--'];
   delete args._;
-  return args;
+  return {
+    ...args,
+    __overrides_unparsed__: unparsedArgs,
+  };
 }
 
 export function withOutputStyleOption(
@@ -278,9 +326,9 @@ export function withRunOneOptions(yargs: Argv) {
   }
 }
 
-export function parseCSV(args: string[] | string) {
+export function parseCSV(args: string[] | string): string[] {
   if (!args) {
-    return args;
+    return [];
   }
   if (Array.isArray(args)) {
     return args;

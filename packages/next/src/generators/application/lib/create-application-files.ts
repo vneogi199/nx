@@ -41,14 +41,11 @@ export function createApplicationFiles(host: Tree, options: NormalizedSchema) {
       host,
       options.appProjectRoot
     ),
-    appContent: createAppJsx(options.name),
+    appContent: createAppJsx(options.projectName),
     styleContent: createStyleRules(),
     pageStyleContent: `.page {}`,
 
-    stylesExt:
-      options.style === 'less' || options.style === 'styl'
-        ? options.style
-        : 'css',
+    stylesExt: options.style === 'less' ? options.style : 'css',
   };
 
   generateFiles(
@@ -133,7 +130,7 @@ export function createApplicationFiles(host: Tree, options: NormalizedSchema) {
             ...(updatedJson.exclude || []),
             ...(appJSON.exclude || []),
             '**e2e/**/*',
-            `dist/${options.name}/**/*`,
+            `dist/${options.projectName}/**/*`,
           ]),
         ],
       };

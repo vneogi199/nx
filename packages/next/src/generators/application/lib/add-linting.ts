@@ -1,17 +1,21 @@
-import { Linter, lintProjectGenerator } from '@nx/linter';
+import { Linter, lintProjectGenerator } from '@nx/eslint';
 import {
   addDependenciesToPackageJson,
   GeneratorCallback,
   joinPathFragments,
   runTasksInSerial,
   Tree,
-  updateJson,
 } from '@nx/devkit';
-import {
-  extendReactEslintJson,
-  extraEslintDependencies,
-} from '@nx/react/src/utils/lint';
+import { extraEslintDependencies } from '@nx/react/src/utils/lint';
 import { NormalizedSchema } from './normalize-options';
+import {
+  addExtendsToLintConfig,
+  addIgnoresToLintConfig,
+  addOverrideToLintConfig,
+  isEslintConfigSupported,
+  updateOverrideInLintConfig,
+} from '@nx/eslint/src/generators/utils/eslint-file';
+import { mapLintPattern } from '@nx/eslint/src/generators/lint-project/lint-project';
 
 export async function addLinting(
   host: Tree,
@@ -24,74 +28,66 @@ export async function addLinting(
       joinPathFragments(options.appProjectRoot, 'tsconfig.app.json'),
     ],
     unitTestRunner: options.unitTestRunner,
-    eslintFilePatterns: [`${options.appProjectRoot}/**/*.{ts,tsx,js,jsx}`],
+    eslintFilePatterns: [
+      mapLintPattern(
+        options.appProjectRoot,
+        '{ts,tsx,js,jsx}',
+        options.rootProject
+      ),
+    ],
     skipFormat: true,
     rootProject: options.rootProject,
   });
+  if (options.linter === Linter.EsLint && isEslintConfigSupported(host)) {
+    addExtendsToLintConfig(host, options.appProjectRoot, [
+      'plugin:@nx/react-typescript',
+      'next',
+      'next/core-web-vitals',
+    ]);
 
-  if (options.linter === Linter.EsLint) {
-    updateJson(
+    // Turn off @next/next/no-html-link-for-pages since there is an issue with nextjs throwing linting errors
+    // TODO(nicholas): remove after Vercel updates nextjs linter to only lint ["*.ts", "*.tsx", "*.js", "*.jsx"]
+    addOverrideToLintConfig(
       host,
-      joinPathFragments(options.appProjectRoot, '.eslintrc.json'),
-      (json) => {
-        json = extendReactEslintJson(json);
-
-        // Turn off @next/next/no-html-link-for-pages since there is an issue with nextjs throwing linting errors
-        // TODO(nicholas): remove after Vercel updates nextjs linter to only lint ["*.ts", "*.tsx", "*.js", "*.jsx"]
-
-        json.ignorePatterns = [...json.ignorePatterns, '.next/**/*'];
-
-        json.rules = {
+      options.appProjectRoot,
+      {
+        files: ['*.*'],
+        rules: {
           '@next/next/no-html-link-for-pages': 'off',
-          ...json.rules,
-        };
-
-        // Find the override that handles both TS and JS files.
-        const commonOverride = json.overrides?.find((o) =>
-          ['*.ts', '*.tsx', '*.js', '*.jsx'].every((ext) =>
-            o.files.includes(ext)
-          )
-        );
-        if (commonOverride) {
-          // Only set parserOptions.project if it already exists (defined by options.setParserOptionsProject)
-          if (commonOverride.parserOptions?.project) {
-            commonOverride.parserOptions.project = [
-              `${options.appProjectRoot}/tsconfig(.*)?.json`,
-            ];
-          }
-          // Configure custom pages directory for next rule
-          if (commonOverride.rules) {
-            commonOverride.rules = {
-              ...commonOverride.rules,
-              '@next/next/no-html-link-for-pages': [
-                'error',
-                `${options.appProjectRoot}/pages`,
-              ],
-            };
-          }
-        }
-
-        json.extends ??= [];
-        if (typeof json.extends === 'string') {
-          json.extends = [json.extends];
-        }
-        // add next.js configuration
-        json.extends.unshift(...['next', 'next/core-web-vitals']);
-        // remove nx/react plugin, as it conflicts with the next.js one
-        json.extends = json.extends.filter(
-          (name) =>
-            name !== 'plugin:@nx/react' && name !== 'plugin:@nrwl/nx/react'
-        );
-
-        json.extends.unshift('plugin:@nx/react-typescript');
-        if (!json.env) {
-          json.env = {};
-        }
-        json.env.jest = true;
-
-        return json;
-      }
+        },
+      },
+      { insertAtTheEnd: false }
     );
+    updateOverrideInLintConfig(
+      host,
+      options.appProjectRoot,
+      (o) =>
+        Array.isArray(o.files) &&
+        o.files.some((f) => f.match(/\*\.ts$/)) &&
+        o.files.some((f) => f.match(/\*\.tsx$/)) &&
+        o.files.some((f) => f.match(/\*\.js$/)) &&
+        o.files.some((f) => f.match(/\*\.jsx$/)),
+      (o) => ({
+        ...o,
+        rules: {
+          ...o.rules,
+          '@next/next/no-html-link-for-pages': [
+            'error',
+            `${options.appProjectRoot}/pages`,
+          ],
+        },
+      })
+    );
+    // add jest specific config
+    if (options.unitTestRunner === 'jest') {
+      addOverrideToLintConfig(host, options.appProjectRoot, {
+        files: ['*.spec.ts', '*.spec.tsx', '*.spec.js', '*.spec.jsx'],
+        env: {
+          jest: true,
+        },
+      });
+    }
+    addIgnoresToLintConfig(host, options.appProjectRoot, ['.next/**/*']);
   }
 
   const installTask = addDependenciesToPackageJson(

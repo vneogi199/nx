@@ -33,23 +33,48 @@ describe('Init MF', () => {
       await setupMf(tree, {
         appName: app,
         mfType: type,
+        typescriptConfiguration: false,
       });
 
       // ASSERT
-      expect(
-        tree.exists(`apps/${app}/module-federation.config.js`)
-      ).toBeTruthy();
-      expect(tree.exists(`apps/${app}/webpack.config.js`)).toBeTruthy();
-      expect(tree.exists(`apps/${app}/webpack.prod.config.js`)).toBeTruthy();
+      expect(tree.exists(`${app}/module-federation.config.js`)).toBeTruthy();
+      expect(tree.exists(`${app}/webpack.config.js`)).toBeTruthy();
+      expect(tree.exists(`${app}/webpack.prod.config.js`)).toBeTruthy();
 
-      const webpackContents = tree.read(
-        `apps/${app}/webpack.config.js`,
-        'utf-8'
-      );
+      const webpackContents = tree.read(`${app}/webpack.config.js`, 'utf-8');
       expect(webpackContents).toMatchSnapshot();
 
       const mfConfigContents = tree.read(
-        `apps/${app}/module-federation.config.js`,
+        `${app}/module-federation.config.js`,
+        'utf-8'
+      );
+      expect(mfConfigContents).toMatchSnapshot();
+    }
+  );
+
+  test.each([
+    ['app1', 'host'],
+    ['remote1', 'remote'],
+  ])(
+    'should create webpack and mf configs correctly when --typescriptConfiguration=true',
+    async (app, type: 'host' | 'remote') => {
+      // ACT
+      await setupMf(tree, {
+        appName: app,
+        mfType: type,
+        typescriptConfiguration: true,
+      });
+
+      // ASSERT
+      expect(tree.exists(`${app}/module-federation.config.ts`)).toBeTruthy();
+      expect(tree.exists(`${app}/webpack.config.ts`)).toBeTruthy();
+      expect(tree.exists(`${app}/webpack.prod.config.ts`)).toBeTruthy();
+
+      const webpackContents = tree.read(`${app}/webpack.config.ts`, 'utf-8');
+      expect(webpackContents).toMatchSnapshot();
+
+      const mfConfigContents = tree.read(
+        `${app}/module-federation.config.ts`,
         'utf-8'
       );
       expect(mfConfigContents).toMatchSnapshot();
@@ -63,7 +88,7 @@ describe('Init MF', () => {
     'create bootstrap file with the contents of main.ts',
     async (app, type: 'host' | 'remote') => {
       // ARRANGE
-      const mainContents = tree.read(`apps/${app}/src/main.ts`, 'utf-8');
+      const mainContents = tree.read(`${app}/src/main.ts`, 'utf-8');
 
       // ACT
       await setupMf(tree, {
@@ -72,11 +97,8 @@ describe('Init MF', () => {
       });
 
       // ASSERT
-      const bootstrapContents = tree.read(
-        `apps/${app}/src/bootstrap.ts`,
-        'utf-8'
-      );
-      const updatedMainContents = tree.read(`apps/${app}/src/main.ts`, 'utf-8');
+      const bootstrapContents = tree.read(`${app}/src/bootstrap.ts`, 'utf-8');
+      const updatedMainContents = tree.read(`${app}/src/main.ts`, 'utf-8');
 
       expect(bootstrapContents).toEqual(mainContents);
       expect(updatedMainContents).not.toEqual(mainContents);
@@ -90,7 +112,7 @@ describe('Init MF', () => {
     'should alter main.ts to import the bootstrap file dynamically',
     async (app, type: 'host' | 'remote') => {
       // ARRANGE
-      const mainContents = tree.read(`apps/${app}/src/main.ts`, 'utf-8');
+      const mainContents = tree.read(`${app}/src/main.ts`, 'utf-8');
 
       // ACT
       await setupMf(tree, {
@@ -99,7 +121,7 @@ describe('Init MF', () => {
       });
 
       // ASSERT
-      const updatedMainContents = tree.read(`apps/${app}/src/main.ts`, 'utf-8');
+      const updatedMainContents = tree.read(`${app}/src/main.ts`, 'utf-8');
 
       expect(updatedMainContents).toEqual(
         `import('./bootstrap').catch((err) => console.error(err));\n`
@@ -118,6 +140,7 @@ describe('Init MF', () => {
       await setupMf(tree, {
         appName: app,
         mfType: type,
+        typescriptConfiguration: false,
       });
 
       // ASSERT
@@ -130,7 +153,35 @@ describe('Init MF', () => {
       );
       expect(build.executor).toEqual('@nx/angular:webpack-browser');
       expect(build.options.customWebpackConfig.path).toEqual(
-        `apps/${app}/webpack.config.js`
+        `${app}/webpack.config.js`
+      );
+    }
+  );
+
+  test.each([
+    ['app1', 'host'],
+    ['remote1', 'remote'],
+  ])(
+    'should change the build and serve target and set correct path to webpack config when --typescriptConfiguration=true',
+    async (app, type: 'host' | 'remote') => {
+      // ACT
+      await setupMf(tree, {
+        appName: app,
+        mfType: type,
+        typescriptConfiguration: true,
+      });
+
+      // ASSERT
+      const { build, serve } = readProjectConfiguration(tree, app).targets;
+
+      expect(serve.executor).toEqual(
+        type === 'host'
+          ? '@nx/angular:module-federation-dev-server'
+          : '@nx/angular:webpack-dev-server'
+      );
+      expect(build.executor).toEqual('@nx/angular:webpack-browser');
+      expect(build.options.customWebpackConfig.path).toEqual(
+        `${app}/webpack.config.ts`
       );
     }
   );
@@ -145,7 +196,7 @@ describe('Init MF', () => {
 
     // ASSERT
     const { build } = readProjectConfiguration(tree, 'app1').targets;
-    expect(tree.exists('apps/app1/webpack.prod.config.js')).toBeFalsy();
+    expect(tree.exists('app1/webpack.prod.config.ts')).toBeFalsy();
     expect(build.configurations.production.customWebpackConfig).toBeUndefined();
   });
 
@@ -159,10 +210,10 @@ describe('Init MF', () => {
 
     // ASSERT
     expect(
-      tree.read('apps/remote1/src/app/remote-entry/entry.component.ts', 'utf-8')
+      tree.read('remote1/src/app/remote-entry/entry.component.ts', 'utf-8')
     ).toMatchSnapshot();
     expect(
-      tree.read('apps/remote1/src/app/remote-entry/entry.module.ts', 'utf-8')
+      tree.read('remote1/src/app/remote-entry/entry.module.ts', 'utf-8')
     ).toMatchSnapshot();
   });
 
@@ -172,7 +223,7 @@ describe('Init MF', () => {
 
     // ASSERT
     expect(
-      tree.read('apps/remote1/src/app/remote-entry/entry.component.ts', 'utf-8')
+      tree.read('remote1/src/app/remote-entry/entry.component.ts', 'utf-8')
     ).toMatchSnapshot();
   });
 
@@ -182,11 +233,30 @@ describe('Init MF', () => {
       appName: 'app1',
       mfType: 'host',
       remotes: ['remote1'],
+      typescriptConfiguration: false,
     });
 
     // ASSERT
     const mfConfigContents = tree.read(
-      `apps/app1/module-federation.config.js`,
+      `app1/module-federation.config.js`,
+      'utf-8'
+    );
+
+    expect(mfConfigContents).toContain(`'remote1'`);
+  });
+
+  it('should add the remote config to the host when --remotes flag supplied when --typescriptConfiguration=true', async () => {
+    // ACT
+    await setupMf(tree, {
+      appName: 'app1',
+      mfType: 'host',
+      remotes: ['remote1'],
+      typescriptConfiguration: true,
+    });
+
+    // ASSERT
+    const mfConfigContents = tree.read(
+      `app1/module-federation.config.ts`,
       'utf-8'
     );
 
@@ -198,6 +268,7 @@ describe('Init MF', () => {
     await setupMf(tree, {
       appName: 'app1',
       mfType: 'host',
+      typescriptConfiguration: false,
     });
 
     // ACT
@@ -205,13 +276,32 @@ describe('Init MF', () => {
       appName: 'remote1',
       mfType: 'remote',
       host: 'app1',
+      typescriptConfiguration: false,
     });
 
     // ASSERT
-    const hostMfConfig = tree.read(
-      'apps/app1/module-federation.config.js',
-      'utf-8'
-    );
+    const hostMfConfig = tree.read('app1/module-federation.config.js', 'utf-8');
+    expect(hostMfConfig).toMatchSnapshot();
+  });
+
+  it('should add a remote application and add it to a specified host applications webpack config when no other remote has been added to it when --typescriptConfiguration=true', async () => {
+    // ARRANGE
+    await setupMf(tree, {
+      appName: 'app1',
+      mfType: 'host',
+      typescriptConfiguration: true,
+    });
+
+    // ACT
+    await setupMf(tree, {
+      appName: 'remote1',
+      mfType: 'remote',
+      host: 'app1',
+      typescriptConfiguration: true,
+    });
+
+    // ASSERT
+    const hostMfConfig = tree.read('app1/module-federation.config.ts', 'utf-8');
     expect(hostMfConfig).toMatchSnapshot();
   });
 
@@ -224,6 +314,7 @@ describe('Init MF', () => {
     await setupMf(tree, {
       appName: 'app1',
       mfType: 'host',
+      typescriptConfiguration: false,
     });
 
     await setupMf(tree, {
@@ -231,6 +322,7 @@ describe('Init MF', () => {
       mfType: 'remote',
       host: 'app1',
       port: 4201,
+      typescriptConfiguration: false,
     });
 
     // ACT
@@ -239,13 +331,45 @@ describe('Init MF', () => {
       mfType: 'remote',
       host: 'app1',
       port: 4202,
+      typescriptConfiguration: false,
     });
 
     // ASSERT
-    const hostMfConfig = tree.read(
-      'apps/app1/module-federation.config.js',
-      'utf-8'
-    );
+    const hostMfConfig = tree.read('app1/module-federation.config.js', 'utf-8');
+    expect(hostMfConfig).toMatchSnapshot();
+  });
+
+  it('should add a remote application and add it to a specified host applications webpack config that contains a remote application already when --typescriptConfiguration=true', async () => {
+    // ARRANGE
+    await generateTestApplication(tree, {
+      name: 'remote2',
+    });
+
+    await setupMf(tree, {
+      appName: 'app1',
+      mfType: 'host',
+      typescriptConfiguration: true,
+    });
+
+    await setupMf(tree, {
+      appName: 'remote1',
+      mfType: 'remote',
+      host: 'app1',
+      port: 4201,
+      typescriptConfiguration: true,
+    });
+
+    // ACT
+    await setupMf(tree, {
+      appName: 'remote2',
+      mfType: 'remote',
+      host: 'app1',
+      port: 4202,
+      typescriptConfiguration: true,
+    });
+
+    // ASSERT
+    const hostMfConfig = tree.read('app1/module-federation.config.ts', 'utf-8');
     expect(hostMfConfig).toMatchSnapshot();
   });
 
@@ -280,14 +404,14 @@ describe('Init MF', () => {
     });
 
     // ASSERT
-    const hostAppRoutes = tree.read('apps/app1/src/app/app.routes.ts', 'utf-8');
+    const hostAppRoutes = tree.read('app1/src/app/app.routes.ts', 'utf-8');
     expect(hostAppRoutes).toMatchSnapshot();
   });
 
   it('should modify the associated cypress project to add the workaround correctly', async () => {
     // ARRANGE
     await generateTestApplication(tree, {
-      name: 'testApp',
+      name: 'test-app',
       routing: true,
     });
 
@@ -301,7 +425,7 @@ describe('Init MF', () => {
 
     // ASSERT
     const cypressCommands = tree.read(
-      'apps/test-app-e2e/src/support/e2e.ts',
+      'test-app-e2e/src/support/e2e.ts',
       'utf-8'
     );
     expect(cypressCommands).toContain(
@@ -317,16 +441,37 @@ describe('Init MF', () => {
         mfType: 'host',
         routing: true,
         federationType: 'dynamic',
+        typescriptConfiguration: false,
       });
 
       // ASSERT
+      expect(tree.read('app1/module-federation.config.js', 'utf-8')).toContain(
+        'remotes: []'
+      );
       expect(
-        tree.read('apps/app1/module-federation.config.js', 'utf-8')
-      ).toContain('remotes: []');
-      expect(
-        tree.exists('apps/app1/src/assets/module-federation.manifest.json')
+        tree.exists('app1/src/assets/module-federation.manifest.json')
       ).toBeTruthy();
-      expect(tree.read('apps/app1/src/main.ts', 'utf-8')).toMatchSnapshot();
+      expect(tree.read('app1/src/main.ts', 'utf-8')).toMatchSnapshot();
+    });
+
+    it('should create a host with the correct configurations when --typescriptConfiguration=true', async () => {
+      // ARRANGE & ACT
+      await setupMf(tree, {
+        appName: 'app1',
+        mfType: 'host',
+        routing: true,
+        federationType: 'dynamic',
+        typescriptConfiguration: true,
+      });
+
+      // ASSERT
+      expect(tree.read('app1/module-federation.config.ts', 'utf-8')).toContain(
+        'remotes: []'
+      );
+      expect(
+        tree.exists('app1/src/assets/module-federation.manifest.json')
+      ).toBeTruthy();
+      expect(tree.read('app1/src/main.ts', 'utf-8')).toMatchSnapshot();
     });
   });
 
@@ -355,26 +500,19 @@ describe('Init MF', () => {
     });
 
     // ASSERT
-    expect(tree.read('apps/ng14/src/bootstrap.ts', 'utf-8'))
-      .toMatchInlineSnapshot(`
-      "import { importProvidersFrom } from '@angular/core';
-      import { bootstrapApplication } from '@angular/platform-browser';
-      import { RouterModule } from '@angular/router';
+    expect(tree.read('ng14/src/bootstrap.ts', 'utf-8')).toMatchInlineSnapshot(`
+      "import { bootstrapApplication } from '@angular/platform-browser';
+      import { appConfig } from './app/app.config';
       import { RemoteEntryComponent } from './app/remote-entry/entry.component';
-      import { appRoutes } from './app/app.routes';
       import { enableProdMode } from '@angular/core';
       import { environment } from './environments/environment';
       if (environment.production) {
         enableProdMode();
       }
 
-      bootstrapApplication(RemoteEntryComponent, {
-        providers: [
-          importProvidersFrom(
-            RouterModule.forRoot(appRoutes, { initialNavigation: 'enabledBlocking' })
-          ),
-        ],
-      });
+      bootstrapApplication(RemoteEntryComponent, appConfig).catch((err) =>
+        console.error(err)
+      );
       "
     `);
   });
@@ -386,6 +524,7 @@ describe('Init MF', () => {
       mfType: 'host',
       routing: true,
       federationType: 'dynamic',
+      typescriptConfiguration: false,
     });
 
     // ACT
@@ -395,20 +534,51 @@ describe('Init MF', () => {
       port: 4201,
       host: 'app1',
       routing: true,
+      typescriptConfiguration: false,
     });
 
     // ASSERT
+    expect(tree.read('app1/module-federation.config.js', 'utf-8')).toContain(
+      'remotes: []'
+    );
     expect(
-      tree.read('apps/app1/module-federation.config.js', 'utf-8')
-    ).toContain('remotes: []');
-    expect(
-      readJson(tree, 'apps/app1/src/assets/module-federation.manifest.json')
+      readJson(tree, 'app1/src/assets/module-federation.manifest.json')
     ).toEqual({
       remote1: 'http://localhost:4201',
     });
+    expect(tree.read('app1/src/app/app.routes.ts', 'utf-8')).toMatchSnapshot();
+  });
+
+  it('should add a remote to dynamic host correctly when --typescriptConfiguration=true', async () => {
+    // ARRANGE
+    await setupMf(tree, {
+      appName: 'app1',
+      mfType: 'host',
+      routing: true,
+      federationType: 'dynamic',
+      typescriptConfiguration: true,
+    });
+
+    // ACT
+    await setupMf(tree, {
+      appName: 'remote1',
+      mfType: 'remote',
+      port: 4201,
+      host: 'app1',
+      routing: true,
+      typescriptConfiguration: true,
+    });
+
+    // ASSERT
+    expect(tree.read('app1/module-federation.config.ts', 'utf-8')).toContain(
+      'remotes: []'
+    );
     expect(
-      tree.read('apps/app1/src/app/app.routes.ts', 'utf-8')
-    ).toMatchSnapshot();
+      readJson(tree, 'app1/src/assets/module-federation.manifest.json')
+    ).toEqual({
+      remote1: 'http://localhost:4201',
+    });
+    expect(tree.read('app1/src/app/app.routes.ts', 'utf-8')).toMatchSnapshot();
   });
 
   it('should throw an error when installed version of angular < 14.1.0 and --standalone is used', async () => {

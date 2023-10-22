@@ -21,10 +21,7 @@ import {
   yargsFormatCheckCommand,
   yargsFormatWriteCommand,
 } from './format/command-object';
-import {
-  yargsGenerateCommand,
-  yargsWorkspaceGeneratorCommand,
-} from './generate/command-object';
+import { yargsGenerateCommand } from './generate/command-object';
 import { yargsInitCommand } from './init/command-object';
 import { yargsListCommand } from './list/command-object';
 import {
@@ -38,8 +35,8 @@ import { yargsRunCommand } from './run/command-object';
 import { yargsRunManyCommand } from './run-many/command-object';
 import { yargsShowCommand } from './show/command-object';
 import { yargsWatchCommand } from './watch/command-object';
-import { yargsWorkspaceLintCommand } from './workspace-lint/command-object';
 import { yargsResetCommand } from './reset/command-object';
+import { yargsReleaseCommand } from './release/command-object';
 
 // Ensure that the output takes up the available width of the terminal.
 yargs.wrap(yargs.terminalWidth());
@@ -78,6 +75,7 @@ export const commandsObject = yargs
   .command(yargsMigrateCommand)
   .command(yargsNewCommand)
   .command(yargsPrintAffectedCommand)
+  .command(yargsReleaseCommand)
   .command(yargsRepairCommand)
   .command(yargsReportCommand)
   .command(yargsResetCommand)
@@ -86,8 +84,6 @@ export const commandsObject = yargs
   .command(yargsShowCommand)
   .command(yargsViewLogsCommand)
   .command(yargsWatchCommand)
-  .command(yargsWorkspaceGeneratorCommand)
-  .command(yargsWorkspaceLintCommand)
   .scriptName('nx')
   .help()
   // NOTE: we handle --version in nx.ts, this just tells yargs that the option exists

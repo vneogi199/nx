@@ -18,17 +18,23 @@ where
     ) -> std::fmt::Result {
         // Format values from the event's's metadata:
         let metadata = event.metadata();
+        let level = *metadata.level();
 
-        if metadata.level() != &Level::WARN && metadata.level() != &Level::TRACE {
-            write!(&mut writer, "\n{} {} ", ">".cyan(), "NX".bold().cyan())?;
-        }
-
-        if metadata.level() == &Level::TRACE {
-            write!(
-                &mut writer,
-                "{}: ",
-                format!("{}", metadata.level()).bold().red()
-            )?;
+        match level {
+            Level::TRACE | Level::DEBUG => {
+                write!(
+                    &mut writer,
+                    "{} {}: ",
+                    format!("{}", metadata.level()).bold().red(),
+                    metadata.target()
+                )?;
+            }
+            Level::WARN => {
+                write!(&mut writer, "\n{} {} ", ">".yellow(), "NX".bold().yellow())?;
+            }
+            _ => {
+                write!(&mut writer, "\n{} {} ", ">".cyan(), "NX".bold().cyan())?;
+            }
         }
 
         // Format all the spans in the event's span context.
@@ -57,13 +63,17 @@ where
         // Write fields on the event
         ctx.field_format().format_fields(writer.by_ref(), event)?;
 
+        if !(matches!(level, Level::TRACE)) && !(matches!(level, Level::DEBUG)) {
+            writeln!(&mut writer)?;
+        }
+
         writeln!(writer)
     }
 }
 
 pub(crate) fn enable_logger() {
     let env_filter =
-        EnvFilter::try_from_env("NX_NATIVE_LOGGING").unwrap_or_else(|_| EnvFilter::new("INFO"));
+        EnvFilter::try_from_env("NX_NATIVE_LOGGING").unwrap_or_else(|_| EnvFilter::new("ERROR"));
     _ = tracing_subscriber::fmt()
         .with_env_filter(env_filter)
         .event_format(NxLogFormatter)

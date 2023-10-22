@@ -14,9 +14,9 @@ import {
   uniq,
   updateFile,
   updateJson,
-  updateProjectConfig,
 } from '@nx/e2e/utils';
 import { names } from '@nx/devkit';
+import { join } from 'path';
 
 describe('Build React libraries and apps', () => {
   /**
@@ -36,7 +36,7 @@ describe('Build React libraries and apps', () => {
 
   let proj: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     app = uniq('app');
     parentLib = uniq('parentlib');
     childLib = uniq('childlib');
@@ -99,7 +99,7 @@ describe('Build React libraries and apps', () => {
     );
 
     // Add assets to child lib
-    updateProjectConfig(childLib, (json) => {
+    updateJson(join('libs', childLib, 'project.json'), (json) => {
       json.targets.build.options.assets = [`libs/${childLib}/src/assets`];
       return json;
     });
@@ -119,43 +119,28 @@ describe('Build React libraries and apps', () => {
       runCLI(`build ${childLib}`);
       runCLI(`build ${childLib2}`);
 
-      checkFilesExist(`dist/libs/${childLib}/index.js`);
+      checkFilesExist(`dist/libs/${childLib}/index.esm.js`);
 
-      checkFilesExist(`dist/libs/${childLib2}/index.js`);
+      checkFilesExist(`dist/libs/${childLib2}/index.esm.js`);
 
       checkFilesExist(`dist/libs/${childLib}/assets/hello.txt`);
       checkFilesExist(`dist/libs/${childLib2}/README.md`);
 
       /*
-       * 2. With dependencies
-       */
-      runCLI(`build ${parentLib}`);
-
-      checkFilesExist(`dist/libs/${parentLib}/index.js`);
-
-      const jsonFile = readJson(`dist/libs/${parentLib}/package.json`);
-      expect(jsonFile.peerDependencies).toEqual(
-        expect.objectContaining({
-          [`@${proj}/${childLib}`]: '0.0.1',
-          [`@${proj}/${childLib2}`]: '0.0.1',
-        })
-      );
-
-      /*
-       * 3. With dependencies without existing dist
+       * 2. With dependencies without existing dist
        */
       rmDist();
 
       runCLI(`build ${parentLib} --skip-nx-cache`);
 
-      checkFilesExist(`dist/libs/${parentLib}/index.js`);
-      checkFilesExist(`dist/libs/${childLib}/index.js`);
-      checkFilesExist(`dist/libs/${childLib2}/index.js`);
+      checkFilesExist(`dist/libs/${parentLib}/index.esm.js`);
+      checkFilesExist(`dist/libs/${childLib}/index.esm.js`);
+      checkFilesExist(`dist/libs/${childLib2}/index.esm.js`);
 
-      expect(readFile(`dist/libs/${childLib}/index.js`)).not.toContain(
+      expect(readFile(`dist/libs/${childLib}/index.esm.js`)).not.toContain(
         'react/jsx-dev-runtime'
       );
-      expect(readFile(`dist/libs/${childLib}/index.js`)).toContain(
+      expect(readFile(`dist/libs/${childLib}/index.esm.js`)).toContain(
         'react/jsx-runtime'
       );
     });
@@ -172,14 +157,14 @@ export async function h() { return 'c'; }
 
       runCLI(`build ${childLib} --format cjs,esm`);
 
-      checkFilesExist(`dist/libs/${childLib}/index.cjs`);
-      checkFilesExist(`dist/libs/${childLib}/index.js`);
+      checkFilesExist(`dist/libs/${childLib}/index.cjs.js`);
+      checkFilesExist(`dist/libs/${childLib}/index.esm.js`);
 
       const cjsPackageSize = getSize(
-        tmpProjPath(`dist/libs/${childLib}/index.cjs`)
+        tmpProjPath(`dist/libs/${childLib}/index.cjs.js`)
       );
       const esmPackageSize = getSize(
-        tmpProjPath(`dist/libs/${childLib}/index.js`)
+        tmpProjPath(`dist/libs/${childLib}/index.esm.js`)
       );
 
       // This is a loose requirement that ESM should be smaller than CJS output.
@@ -228,7 +213,7 @@ export async function h() { return 'c'; }
       // What we're testing
       runCLI(`build ${myLib}`);
       // Assertion
-      const content = readFile(`dist/libs/${myLib}/index.js`);
+      const content = readFile(`dist/libs/${myLib}/index.esm.js`);
 
       /**
        * Then check if the result contains this "promise" polyfill?

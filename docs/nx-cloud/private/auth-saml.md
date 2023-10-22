@@ -39,7 +39,7 @@ if you are interested.
 7. Add these configuration options
 
    1. Configure the Identifier **exactly** as `nx-private-cloud`
-   2. For the **Reply URL**, it should point to your Private Cloud instance URL. Make sure it ends with `/auth/saml/callback`
+   2. For the **Reply URL**, it should point to your Private Cloud instance URL. Make sure it ends with `/auth-callback`
 
    ![Step 8](/nx-cloud/private/images/saml/azure_8.png)
 
@@ -134,7 +134,7 @@ if you are interested.
     1. `SAML_CERT=<your-cert-string-from-above>`
     2. `SAML_ENTRY_POINT=<your-login-url-from-above>`
 
-# Helm config
+## Helm config
 
 If you are using [Helm to deploy NxCloud](https://github.com/nrwl/nx-cloud-helm) you
 will need to configure the below two values, as well as make the `SAML_CERT` and `SAML_ENTRY_POINT`

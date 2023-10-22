@@ -14,9 +14,13 @@ nx g @nx/web:app frontend
 
 ### Adding Jest to an Existing Project
 
-Add Jest to a project using the `jest-project` generator from `@nx/jest`.
+Add Jest to a project using the `configuration` generator from `@nx/jest`.
 
 First, install `@nx/jest`, if not already installed using your preferred package manager.
+
+{% callout type="note" title="Keep Nx Package Versions In Sync" %}
+Make sure to install the `@nx/jest` version that matches the version of `nx` in your repository. If the version numbers get out of sync, you can encounter some difficult to debug errors. You can [fix Nx version mismatches with this recipe](/recipes/tips-n-tricks/keep-nx-versions-in-sync).
+{% /callout %}
 
 ```shell
 npm install --save-dev @nx/jest
@@ -26,10 +30,10 @@ npm install --save-dev @nx/jest
 yarn add --dev @nx/jest
 ```
 
-Once installed, run the `jest-project` generator
+Once installed, run the `configuration` generator
 
 ```shell
-nx g @nx/jest:jest-project --project=<project-name>
+nx g @nx/jest:configuration --project=<project-name>
 ```
 
 > Hint: You can use the `--dry-run` flag to see what will be generated.
@@ -113,7 +117,7 @@ export default {
 
 ### Nx
 
-Nx Jest Plugin options can be configured via the [project config file](/reference/project-configuration) or via the [command line flags](/packages/jest).
+Nx Jest Plugin options can be configured via the [project config file](/reference/project-configuration) or via the [command line flags](/nx-api/jest).
 
 > Hint: Use `--help` to see all available options
 >
@@ -136,7 +140,7 @@ Nx provides a helper function that you can import within your setup/teardown fil
 
 ```typescript {% fileName="global-setup.ts" %}
 import { registerTsProject } from '@nx/js/src/internal';
-const cleanupRegisteredPaths = registerTsProject('.', 'tsconfig.base.json');
+const cleanupRegisteredPaths = registerTsProject('./tsconfig.base.json');
 
 import { yourFancyFunction } from '@some-org/my-util-library';
 export default async function () {
@@ -180,7 +184,7 @@ export default {
 
 ```typescript {% fileName="global-setup-swc.ts" %}
 import { registerTsProject } from '@nx/js/src/internal';
-const cleanupRegisteredPaths = registerTsProject('.', 'tsconfig.base.json');
+const cleanupRegisteredPaths = registerTsProject('./tsconfig.base.json');
 
 export default async function () {
   // swc will hoist all imports, and we need to make sure the register happens first
@@ -199,4 +203,4 @@ export default async function () {
 ## More Documentation
 
 - [Jest Docs](https://jestjs.io/)
-- [@nx/jest options](/packages/jest)
+- [@nx/jest options](/nx-api/jest)

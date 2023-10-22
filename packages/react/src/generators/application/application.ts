@@ -1,20 +1,15 @@
-import {
-  extendReactEslintJson,
-  extraEslintDependencies,
-} from '../../utils/lint';
+import { extraEslintDependencies } from '../../utils/lint';
 import { NormalizedSchema, Schema } from './schema';
 import { createApplicationFiles } from './lib/create-application-files';
 import { updateSpecConfig } from './lib/update-jest-config';
 import { normalizeOptions } from './lib/normalize-options';
 import { addProject, maybeJs } from './lib/add-project';
-import { addCypress } from './lib/add-cypress';
 import { addJest } from './lib/add-jest';
 import { addRouting } from './lib/add-routing';
 import { setDefaults } from './lib/set-defaults';
 import { addStyledModuleDependencies } from '../../rules/add-styled-dependencies';
 import {
   addDependenciesToPackageJson,
-  convertNxGenerator,
   ensurePackage,
   formatFiles,
   GeneratorCallback,
@@ -23,23 +18,26 @@ import {
   runTasksInSerial,
   stripIndents,
   Tree,
-  updateJson,
 } from '@nx/devkit';
 
 import reactInitGenerator from '../init/init';
-import { Linter, lintProjectGenerator } from '@nx/linter';
-import { mapLintPattern } from '@nx/linter/src/generators/lint-project/lint-project';
+import { Linter, lintProjectGenerator } from '@nx/eslint';
+import { mapLintPattern } from '@nx/eslint/src/generators/lint-project/lint-project';
 import {
   babelLoaderVersion,
   nxRspackVersion,
   nxVersion,
-  swcLoaderVersion,
 } from '../../utils/versions';
 import { installCommonDependencies } from './lib/install-common-dependencies';
 import { extractTsConfigBase } from '../../utils/create-ts-config';
 import { addSwcDependencies } from '@nx/js/src/utils/swc/add-swc-dependencies';
 import * as chalk from 'chalk';
 import { showPossibleWarnings } from './lib/show-possible-warnings';
+import { addE2e } from './lib/add-e2e';
+import {
+  addExtendsToLintConfig,
+  isEslintConfigSupported,
+} from '@nx/eslint/src/generators/utils/eslint-file';
 
 async function addLinting(host: Tree, options: NormalizedSchema) {
   const tasks: GeneratorCallback[] = [];
@@ -64,14 +62,12 @@ async function addLinting(host: Tree, options: NormalizedSchema) {
     });
     tasks.push(lintTask);
 
-    updateJson(
-      host,
-      joinPathFragments(options.appProjectRoot, '.eslintrc.json'),
-      extendReactEslintJson
-    );
+    if (isEslintConfigSupported(host)) {
+      addExtendsToLintConfig(host, options.appProjectRoot, 'plugin:@nx/react');
+    }
 
     if (!options.skipPackageJson) {
-      const installTask = await addDependenciesToPackageJson(
+      const installTask = addDependenciesToPackageJson(
         host,
         extraEslintDependencies.dependencies,
         extraEslintDependencies.devDependencies
@@ -87,9 +83,19 @@ export async function applicationGenerator(
   host: Tree,
   schema: Schema
 ): Promise<GeneratorCallback> {
+  return await applicationGeneratorInternal(host, {
+    projectNameAndRootFormat: 'derived',
+    ...schema,
+  });
+}
+
+export async function applicationGeneratorInternal(
+  host: Tree,
+  schema: Schema
+): Promise<GeneratorCallback> {
   const tasks = [];
 
-  const options = normalizeOptions(host, schema);
+  const options = await normalizeOptions(host, schema);
   showPossibleWarnings(host, options);
 
   const initTask = await reactInitGenerator(host, {
@@ -108,9 +114,8 @@ export async function applicationGenerator(
   addProject(host, options);
 
   if (options.bundler === 'vite') {
-    const { viteConfigurationGenerator } = ensurePackage<
-      typeof import('@nx/vite')
-    >('@nx/vite', nxVersion);
+    const { createOrEditViteConfig, viteConfigurationGenerator } =
+      ensurePackage<typeof import('@nx/vite')>('@nx/vite', nxVersion);
     // We recommend users use `import.meta.env.MODE` and other variables in their code to differentiate between production and development.
     // See: https://vitejs.dev/guide/env-and-mode.html
     if (
@@ -131,6 +136,27 @@ export async function applicationGenerator(
       skipFormat: true,
     });
     tasks.push(viteTask);
+    createOrEditViteConfig(
+      host,
+      {
+        project: options.projectName,
+        includeLib: false,
+        includeVitest: options.unitTestRunner === 'vitest',
+        inSourceTests: options.inSourceTests,
+        rollupOptionsExternal: [
+          "'react'",
+          "'react-dom'",
+          "'react/jsx-runtime'",
+        ],
+        imports: [
+          options.compiler === 'swc'
+            ? `import react from '@vitejs/plugin-react-swc'`
+            : `import react from '@vitejs/plugin-react'`,
+        ],
+        plugins: ['react()'],
+      },
+      false
+    );
   } else if (options.bundler === 'webpack') {
     const { webpackInitGenerator } = ensurePackage<
       typeof import('@nx/webpack')
@@ -160,10 +186,9 @@ export async function applicationGenerator(
   }
 
   if (options.bundler !== 'vite' && options.unitTestRunner === 'vitest') {
-    const { vitestGenerator } = ensurePackage<typeof import('@nx/vite')>(
-      '@nx/vite',
-      nxVersion
-    );
+    const { createOrEditViteConfig, vitestGenerator } = ensurePackage<
+      typeof import('@nx/vite')
+    >('@nx/vite', nxVersion);
 
     const vitestTask = await vitestGenerator(host, {
       uiFramework: 'react',
@@ -173,6 +198,27 @@ export async function applicationGenerator(
       skipFormat: true,
     });
     tasks.push(vitestTask);
+    createOrEditViteConfig(
+      host,
+      {
+        project: options.projectName,
+        includeLib: false,
+        includeVitest: true,
+        inSourceTests: options.inSourceTests,
+        rollupOptionsExternal: [
+          "'react'",
+          "'react-dom'",
+          "'react/jsx-runtime'",
+        ],
+        imports: [
+          options.compiler === 'swc'
+            ? `import react from '@vitejs/plugin-react-swc'`
+            : `import react from '@vitejs/plugin-react'`,
+        ],
+        plugins: ['react()'],
+      },
+      true
+    );
   }
 
   if (
@@ -190,8 +236,8 @@ export async function applicationGenerator(
   const lintTask = await addLinting(host, options);
   tasks.push(lintTask);
 
-  const cypressTask = await addCypress(host, options);
-  tasks.push(cypressTask);
+  const e2eTask = await addE2e(host, options);
+  tasks.push(e2eTask);
 
   if (options.unitTestRunner === 'jest') {
     const jestTask = await addJest(host, options);
@@ -256,4 +302,3 @@ export async function applicationGenerator(
 }
 
 export default applicationGenerator;
-export const applicationSchematic = convertNxGenerator(applicationGenerator);

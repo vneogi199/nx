@@ -7,11 +7,9 @@ import {
   getUnscopedLibName,
 } from '@nx/cypress/src/utils/project-name';
 import {
-  convertNxGenerator,
   formatFiles,
   generateFiles,
   GeneratorCallback,
-  joinPathFragments,
   readJson,
   readProjectConfiguration,
   runTasksInSerial,
@@ -19,7 +17,7 @@ import {
   updateJson,
   updateProjectConfiguration,
 } from '@nx/devkit';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 
 import { join } from 'path';
 import { safeFileDelete } from '../../utils/utilities';
@@ -108,7 +106,7 @@ function addBaseUrlToCypressConfig(tree: Tree, projectName: string) {
   } else if (tree.exists(cypressTs)) {
     // cypress >= v10
     tree.delete(cypressTs);
-    generateFiles(tree, joinPathFragments(__dirname, 'files'), projectRoot, {
+    generateFiles(tree, join(__dirname, 'files'), projectRoot, {
       tpl: '',
     });
   }
@@ -154,6 +152,3 @@ function projectAlreadyHasCypress(tree: Tree): boolean {
 }
 
 export default cypressProjectGenerator;
-export const cypressProjectSchematic = convertNxGenerator(
-  cypressProjectGenerator
-);

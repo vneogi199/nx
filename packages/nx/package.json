@@ -9,7 +9,7 @@
     "directory": "packages/nx"
   },
   "scripts": {
-    "postinstall": "node ./bin/compute-project-graph"
+    "postinstall": "node ./bin/post-install"
   },
   "keywords": [
     "Monorepo",
@@ -23,7 +23,8 @@
     "CLI"
   ],
   "bin": {
-    "nx": "./bin/nx.js"
+    "nx": "./bin/nx.js",
+    "nx-cloud": "./bin/nx-cloud.js"
   },
   "author": "Victor Savkin",
   "license": "MIT",
@@ -32,23 +33,23 @@
   },
   "homepage": "https://nx.dev",
   "dependencies": {
-    "@parcel/watcher": "2.0.4",
     "@yarnpkg/lockfile": "^1.1.0",
-    "@yarnpkg/parsers": "^3.0.0-rc.18",
+    "@yarnpkg/parsers": "3.0.0-rc.46",
     "@zkochan/js-yaml": "0.0.6",
-    "axios": "^1.0.0",
+    "axios": "^1.5.1",
     "chalk": "^4.1.0",
     "cli-cursor": "3.1.0",
     "cli-spinners": "2.6.1",
-    "cliui": "^7.0.2",
-    "dotenv": "~10.0.0",
+    "cliui": "^8.0.1",
+    "dotenv": "~16.3.1",
+    "dotenv-expand": "~10.0.0",
     "enquirer": "~2.3.6",
-    "fast-glob": "3.2.7",
     "figures": "3.2.0",
     "flat": "^5.0.2",
     "fs-extra": "^11.1.0",
     "glob": "7.1.4",
     "ignore": "^5.0.4",
+    "jest-diff": "^29.4.1",
     "js-yaml": "4.1.0",
     "jsonc-parser": "3.2.0",
     "lines-and-columns": "~2.0.3",
@@ -64,11 +65,12 @@
     "tslib": "^2.3.0",
     "v8-compile-cache": "2.3.0",
     "yargs": "^17.6.2",
-    "yargs-parser": "21.1.1"
+    "yargs-parser": "21.1.1",
+    "node-machine-id": "1.1.12"
   },
   "peerDependencies": {
-    "@swc-node/register": "^1.4.2",
-    "@swc/core": "^1.2.173"
+    "@swc-node/register": "^1.6.7",
+    "@swc/core": "^1.3.85"
   },
   "peerDependenciesMeta": {
     "@swc-node/register": {
@@ -98,6 +100,7 @@
       "@nx/jest",
       "@nrwl/jest",
       "@nx/linter",
+      "@nx/eslint",
       "@nrwl/linter",
       "@nx/workspace",
       "@nrwl/workspace",
@@ -123,6 +126,7 @@
       "@nrwl/next",
       "@nx/node",
       "@nrwl/node",
+      "@nx/playwright",
       "@nx/plugin",
       "@nrwl/nx-plugin",
       "@nx/react",
@@ -136,6 +140,7 @@
       "@nrwl/tao",
       "@nx/vite",
       "@nrwl/vite",
+      "@nx/vue",
       "@nx/web",
       "@nrwl/web",
       "@nx/webpack",
@@ -150,6 +155,7 @@
       }
     ]
   },
+  "generators": "./generators.json",
   "executors": "./executors.json",
   "builders": "./executors.json",
   "publishConfig": {

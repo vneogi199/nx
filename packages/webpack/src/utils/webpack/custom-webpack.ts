@@ -1,38 +1,33 @@
-export function tsNodeRegister(file: string = '', tsConfig?: string) {
-  if (!file?.endsWith('.ts')) return;
-
-  // Avoid double-registering which can lead to issues type-checking already transformed files.
-  if (isRegistered()) return;
-
-  // Register TS compiler lazily
-  require('ts-node').register({
-    project: tsConfig,
-    compilerOptions: {
-      module: 'CommonJS',
-      types: ['node'],
-    },
-  });
-
-  // Register paths in tsConfig
-  const tsconfigPaths = require('tsconfig-paths');
-  const { absoluteBaseUrl: baseUrl, paths } =
-    tsconfigPaths.loadConfig(tsConfig);
-  if (baseUrl && paths) {
-    tsconfigPaths.register({ baseUrl, paths });
-  }
-}
+import { registerTsProject } from '@nx/js/src/internal';
 
 export function resolveCustomWebpackConfig(path: string, tsConfig: string) {
-  tsNodeRegister(path, tsConfig);
+  // Don't transpile non-TS files. This prevents workspaces libs from being registered via tsconfig-paths.
+  // There's an issue here with Nx workspace where loading plugins from source (via tsconfig-paths) can lead to errors.
+  if (!/\.(ts|mts|cts)$/.test(path)) {
+    return require(path);
+  }
 
-  const customWebpackConfig = require(path);
+  const cleanupTranspiler = registerTsProject(tsConfig);
+  const maybeCustomWebpackConfig = require(path);
+  cleanupTranspiler();
+
   // If the user provides a configuration in TS file
-  // then there are 2 cases for exporing an object. The first one is:
+  // then there are 3 cases for exporing an object. The first one is:
   // `module.exports = { ... }`. And the second one is:
   // `export default { ... }`. The ESM format is compiled into:
   // `{ default: { ... } }`
-  return customWebpackConfig.default || customWebpackConfig;
+  // There is also a case of
+  // `{ default: { default: { ... } }`
+  const customWebpackConfig =
+    'default' in maybeCustomWebpackConfig
+      ? 'default' in maybeCustomWebpackConfig.default
+        ? maybeCustomWebpackConfig.default.default
+        : maybeCustomWebpackConfig.default
+      : maybeCustomWebpackConfig;
+
+  return customWebpackConfig;
 }
+
 export function isRegistered() {
   return (
     require.extensions['.ts'] != undefined ||

@@ -19,7 +19,7 @@ import { isCI } from '../../utils/is-ci';
 import { NxJsonConfiguration } from '../../config/nx-json';
 import { readNxJson } from '../../config/configuration';
 import { PromisedBasedQueue } from '../../utils/promised-based-queue';
-import { Workspaces } from '../../config/workspaces';
+import { hasNxJson } from '../../config/nx-json';
 import { Message, SocketMessenger } from './socket-messenger';
 import { safelyCleanUpExistingProcess } from '../cache';
 import { Hash } from '../../hasher/task-hasher';
@@ -37,6 +37,12 @@ export type ChangedFile = {
   type: 'create' | 'update' | 'delete';
 };
 
+enum DaemonStatus {
+  CONNECTING,
+  DISCONNECTED,
+  CONNECTED,
+}
+
 export class DaemonClient {
   constructor(private readonly nxJson: NxJsonConfiguration) {
     this.reset();
@@ -50,13 +56,17 @@ export class DaemonClient {
   private currentReject;
 
   private _enabled: boolean | undefined;
-  private _connected: boolean;
+  private _daemonStatus: DaemonStatus = DaemonStatus.DISCONNECTED;
+  private _waitForDaemonReady: Promise<void> | null = null;
+  private _daemonReady: () => void | null = null;
   private _out: FileHandle = null;
   private _err: FileHandle = null;
 
   enabled() {
     if (this._enabled === undefined) {
+      // TODO(v18): Add migration to move it out of existing configs and remove the ?? here.
       const useDaemonProcessOption =
+        this.nxJson.useDaemonProcess ??
         this.nxJson.tasksRunnerOptions?.['default']?.options?.useDaemonProcess;
       const env = process.env.NX_DAEMON;
 
@@ -104,7 +114,10 @@ export class DaemonClient {
     this._out = null;
     this._err = null;
 
-    this._connected = false;
+    this._daemonStatus = DaemonStatus.DISCONNECTED;
+    this._waitForDaemonReady = new Promise<void>(
+      (resolve) => (this._daemonReady = resolve)
+    );
   }
 
   async requestShutdown(): Promise<void> {
@@ -123,12 +136,13 @@ export class DaemonClient {
   hashTasks(
     runnerOptions: any,
     tasks: Task[],
-    taskGraph: TaskGraph
+    taskGraph: TaskGraph,
+    env: NodeJS.ProcessEnv
   ): Promise<Hash[]> {
     return this.sendToDaemonViaQueue({
       type: 'HASH_TASKS',
       runnerOptions,
-      env: process.env,
+      env,
       tasks,
       taskGraph,
     });
@@ -149,27 +163,28 @@ export class DaemonClient {
     ) => void
   ): Promise<UnregisterCallback> {
     await this.getProjectGraph();
-    const messenger = new SocketMessenger(connect(FULL_OS_SOCKET_PATH)).listen(
-      (message) => {
-        try {
-          const parsedMessage = JSON.parse(message);
-          callback(null, parsedMessage);
-        } catch (e) {
-          callback(e, null);
-        }
-      },
-      () => {
-        callback('closed', null);
-      },
-      (err) => callback(err, null)
-    );
+    let messenger: SocketMessenger | undefined;
 
-    await this.queue.sendToQueue(() =>
-      messenger.sendMessage({ type: 'REGISTER_FILE_WATCHER', config })
-    );
+    await this.queue.sendToQueue(() => {
+      messenger = new SocketMessenger(connect(FULL_OS_SOCKET_PATH)).listen(
+        (message) => {
+          try {
+            const parsedMessage = JSON.parse(message);
+            callback(null, parsedMessage);
+          } catch (e) {
+            callback(e, null);
+          }
+        },
+        () => {
+          callback('closed', null);
+        },
+        (err) => callback(err, null)
+      );
+      return messenger.sendMessage({ type: 'REGISTER_FILE_WATCHER', config });
+    });
 
     return () => {
-      messenger.close();
+      messenger?.close();
     };
   }
 
@@ -232,12 +247,13 @@ export class DaemonClient {
         // it's ok for the daemon to terminate if the client doesn't wait on
         // any messages from the daemon
         if (this.queue.isEmpty()) {
-          this._connected = false;
+          this.reset();
         } else {
           output.error({
             title: 'Daemon process terminated and closed the connection',
             bodyLines: [
               'Please rerun the command, which will restart the daemon.',
+              `If you get this error again, check for any errors in the daemon process logs found in: ${DAEMON_OUTPUT_LOG_FILE}`,
             ],
           });
           process.exit(1);
@@ -279,12 +295,17 @@ export class DaemonClient {
   }
 
   private async sendMessageToDaemon(message: Message): Promise<any> {
-    if (!this._connected) {
-      this._connected = true;
+    if (this._daemonStatus == DaemonStatus.DISCONNECTED) {
+      this._daemonStatus = DaemonStatus.CONNECTING;
+
       if (!(await this.isServerAvailable())) {
         await this.startInBackground();
       }
       this.setUpConnection();
+      this._daemonStatus = DaemonStatus.CONNECTED;
+      this._daemonReady();
+    } else if (this._daemonStatus == DaemonStatus.CONNECTING) {
+      await this._waitForDaemonReady;
     }
 
     return new Promise((resolve, reject) => {
@@ -344,10 +365,6 @@ export class DaemonClient {
 
     this._out = await open(DAEMON_OUTPUT_LOG_FILE, 'a');
     this._err = await open(DAEMON_OUTPUT_LOG_FILE, 'a');
-
-    if (this.nxJson.tasksRunnerOptions.default?.nativeWatcher) {
-      DAEMON_ENV_SETTINGS['NX_NATIVE_WATCHER'] = true;
-    }
 
     const backgroundProcess = spawn(
       process.execPath,
@@ -418,7 +435,7 @@ function isDocker() {
 }
 
 function nxJsonIsNotPresent() {
-  return !new Workspaces(workspaceRoot).hasNxJson();
+  return !hasNxJson(workspaceRoot);
 }
 
 function daemonProcessException(message: string) {

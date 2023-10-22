@@ -2,7 +2,6 @@ import type * as ts from 'typescript';
 import {
   addDependenciesToPackageJson,
   applyChangesToString,
-  convertNxGenerator,
   formatFiles,
   generateFiles,
   joinPathFragments,
@@ -24,6 +23,7 @@ import {
 } from '../../utils/versions';
 import { addStaticRouter } from '../../utils/ast-utils';
 import { ensureTypescript } from '@nx/js/src/utils/typescript/ensure-typescript';
+import { join } from 'path';
 
 let tsModule: typeof import('typescript');
 
@@ -182,7 +182,7 @@ export async function setupSsrGenerator(tree: Tree, options: Schema) {
   const nxJson = readNxJson(tree);
   if (
     nxJson.tasksRunnerOptions?.default &&
-    !nxJson.tasksRunnerOptions.default.options.cacheableOperations.includes(
+    !nxJson.tasksRunnerOptions?.default.options.cacheableOperations.includes(
       'server'
     )
   ) {
@@ -191,8 +191,11 @@ export async function setupSsrGenerator(tree: Tree, options: Schema) {
       'server',
     ];
   }
+  nxJson.targetDefaults ??= {};
+  nxJson.targetDefaults['server'] ??= {};
+  nxJson.targetDefaults.server.cache = true;
 
-  generateFiles(tree, joinPathFragments(__dirname, 'files'), projectRoot, {
+  generateFiles(tree, join(__dirname, 'files'), projectRoot, {
     tmpl: '',
     extraInclude:
       options.extraInclude?.length > 0
@@ -237,5 +240,3 @@ export async function setupSsrGenerator(tree: Tree, options: Schema) {
 }
 
 export default setupSsrGenerator;
-
-export const setupSsrSchematic = convertNxGenerator(setupSsrGenerator);

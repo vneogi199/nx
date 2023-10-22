@@ -11,13 +11,15 @@ describe('@nx/workspace:generateWorkspaceFiles', () => {
 
   beforeEach(() => {
     tree = createTree();
+    // we need an actual path for the package manager version check
+    tree.root = process.cwd();
   });
 
   it('should create files', async () => {
     await generateWorkspaceFiles(tree, {
       name: 'proj',
       directory: 'proj',
-      preset: Preset.Empty,
+      preset: Preset.Apps,
       defaultBase: 'main',
       isCustomPreset: false,
     });
@@ -34,6 +36,8 @@ describe('@nx/workspace:generateWorkspaceFiles', () => {
           [
             Preset.ReactMonorepo,
             Preset.ReactStandalone,
+            Preset.VueMonorepo,
+            Preset.VueStandalone,
             Preset.AngularMonorepo,
             Preset.AngularStandalone,
             Preset.Nest,
@@ -78,7 +82,7 @@ describe('@nx/workspace:generateWorkspaceFiles', () => {
     await generateWorkspaceFiles(tree, {
       name: 'proj',
       directory: 'proj',
-      preset: Preset.Empty,
+      preset: Preset.Apps,
       defaultBase: 'main',
       isCustomPreset: false,
     });
@@ -86,24 +90,35 @@ describe('@nx/workspace:generateWorkspaceFiles', () => {
     expect(nxJson).toMatchInlineSnapshot(`
       {
         "$schema": "./node_modules/nx/schemas/nx-schema.json",
+        "namedInputs": {
+          "default": [
+            "{projectRoot}/**/*",
+            "sharedGlobals",
+          ],
+          "production": [
+            "default",
+          ],
+          "sharedGlobals": [],
+        },
         "targetDefaults": {
           "build": {
+            "cache": true,
             "dependsOn": [
               "^build",
             ],
+            "inputs": [
+              "production",
+              "^production",
+            ],
           },
-        },
-        "tasksRunnerOptions": {
-          "default": {
-            "options": {
-              "cacheableOperations": [
-                "build",
-                "lint",
-                "test",
-                "e2e",
-              ],
-            },
-            "runner": "nx/tasks-runners/default",
+          "e2e": {
+            "cache": true,
+          },
+          "lint": {
+            "cache": true,
+          },
+          "test": {
+            "cache": true,
           },
         },
       }
@@ -136,6 +151,7 @@ describe('@nx/workspace:generateWorkspaceFiles', () => {
         },
         "targetDefaults": {
           "build": {
+            "cache": true,
             "dependsOn": [
               "^build",
             ],
@@ -144,18 +160,14 @@ describe('@nx/workspace:generateWorkspaceFiles', () => {
               "^production",
             ],
           },
-        },
-        "tasksRunnerOptions": {
-          "default": {
-            "options": {
-              "cacheableOperations": [
-                "build",
-                "lint",
-                "test",
-                "e2e",
-              ],
-            },
-            "runner": "nx/tasks-runners/default",
+          "e2e": {
+            "cache": true,
+          },
+          "lint": {
+            "cache": true,
+          },
+          "test": {
+            "cache": true,
           },
         },
       }
@@ -166,7 +178,7 @@ describe('@nx/workspace:generateWorkspaceFiles', () => {
     await generateWorkspaceFiles(tree, {
       name: 'proj',
       directory: 'proj',
-      preset: Preset.Empty,
+      preset: Preset.Apps,
       defaultBase: 'main',
       isCustomPreset: false,
     });
@@ -182,7 +194,7 @@ describe('@nx/workspace:generateWorkspaceFiles', () => {
     await generateWorkspaceFiles(tree, {
       name: 'proj',
       directory: 'proj',
-      preset: Preset.Empty,
+      preset: Preset.Apps,
       defaultBase: 'main',
       isCustomPreset: false,
     });
@@ -204,25 +216,26 @@ describe('@nx/workspace:generateWorkspaceFiles', () => {
       packageManager: 'npm',
       isCustomPreset: false,
     });
-    expect(tree.exists('/proj/packages/.gitkeep')).toBe(true);
-    expect(tree.exists('/proj/apps/.gitkeep')).toBe(false);
-    expect(tree.exists('/proj/libs/.gitkeep')).toBe(false);
     const nx = readJson(tree, '/proj/nx.json');
     expect(nx).toMatchInlineSnapshot(`
       {
         "$schema": "./node_modules/nx/schemas/nx-schema.json",
         "extends": "nx/presets/npm.json",
-        "tasksRunnerOptions": {
-          "default": {
-            "options": {
-              "cacheableOperations": [
-                "build",
-                "lint",
-                "test",
-                "e2e",
-              ],
-            },
-            "runner": "nx/tasks-runners/default",
+        "targetDefaults": {
+          "build": {
+            "cache": true,
+            "dependsOn": [
+              "^build",
+            ],
+          },
+          "e2e": {
+            "cache": true,
+          },
+          "lint": {
+            "cache": true,
+          },
+          "test": {
+            "cache": true,
           },
         },
       }

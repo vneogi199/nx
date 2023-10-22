@@ -30,6 +30,10 @@ npx create-nx-workspace your-workspace-name
 
 For existing Nx workspaces, install the `@nx/react-native` package to add React Native capabilities to it.
 
+{% callout type="note" title="Keep Nx Package Versions In Sync" %}
+Make sure to install the `@nx/react-native` version that matches the version of `nx` in your repository. If the version numbers get out of sync, you can encounter some difficult to debug errors. You can [fix Nx version mismatches with this recipe](/recipes/tips-n-tricks/keep-nx-versions-in-sync).
+{% /callout %}
+
 {% tabs %}
 {%tab label="npm"%}
 
@@ -79,7 +83,7 @@ The Nx CLI provides the [`migrate` command](/core-features/automate-updating-dep
 
 #### Use upgrade-native Generator
 
-To upgrade native iOS and Android code to latest, you can use the [upgrade-native](/packages/react-native/generators/upgrade-native) generator:
+To upgrade native iOS and Android code to latest, you can use the [upgrade-native](/nx-api/react-native/generators/upgrade-native) generator:
 
 ```shell
 nx generate @nx/react-native:upgrade-native <your-app-name>
@@ -143,5 +147,5 @@ The build artifacts will be located under `<your app folder>/android/app/build`.
 
 ## More Documentation
 
-- [Using Detox](/packages/detox)
-- [Using Jest](/packages/jest)
+- [Using Detox](/nx-api/detox)
+- [Using Jest](/nx-api/jest)

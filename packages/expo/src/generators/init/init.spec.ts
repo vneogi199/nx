@@ -6,7 +6,7 @@ describe('init', () => {
   let tree: Tree;
 
   beforeEach(() => {
-    tree = createTreeWithEmptyWorkspace({ layout: 'apps-libs' });
+    tree = createTreeWithEmptyWorkspace();
     tree.write('.gitignore', '');
   });
 
@@ -17,7 +17,6 @@ describe('init', () => {
     expect(packageJson.dependencies['expo']).toBeDefined();
     expect(packageJson.dependencies['react-native']).toBeDefined();
     expect(packageJson.devDependencies['@types/react']).toBeDefined();
-    expect(packageJson.devDependencies['@types/react-native']).toBeDefined();
   });
 
   it('should add .gitignore entries for React native files and directories', async () => {

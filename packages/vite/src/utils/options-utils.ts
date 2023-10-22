@@ -12,7 +12,6 @@ import {
   InlineConfig,
   PluginOption,
   PreviewOptions,
-  searchForWorkspaceRoot,
   ServerOptions,
 } from 'vite';
 import { ViteDevServerExecutorOptions } from '../executors/dev-server/schema';
@@ -89,10 +88,10 @@ export function getViteSharedConfig(
   const projectRoot =
     context.projectsConfigurations.projects[context.projectName].root;
 
-  const root = relative(
-    context.cwd,
-    joinPathFragments(context.root, projectRoot)
-  );
+  const root =
+    projectRoot === '.'
+      ? process.cwd()
+      : relative(context.cwd, joinPathFragments(context.root, projectRoot));
 
   return {
     mode: options.mode,
@@ -109,10 +108,14 @@ export function getViteSharedConfig(
 /**
  * Builds the options for the vite dev server.
  */
-export function getViteServerOptions(
+export async function getViteServerOptions(
   options: ViteDevServerExecutorOptions,
   context: ExecutorContext
-): ServerOptions {
+): Promise<ServerOptions> {
+  // Allows ESM to be required in CJS modules. Vite will be published as ESM in the future.
+  const { searchForWorkspaceRoot } = await (Function(
+    'return import("vite")'
+  )() as Promise<typeof import('vite')>);
   const projectRoot =
     context.projectsConfigurations.projects[context.projectName].root;
   const serverOptions: ServerOptions = {
@@ -157,7 +160,7 @@ export function getViteBuildOptions(
     emptyOutDir: options.emptyOutDir,
     reportCompressedSize: true,
     cssCodeSplit: options.cssCodeSplit,
-    target: options.target ?? 'esnext',
+    target: options.target,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
@@ -197,6 +200,6 @@ export function getVitePreviewOptions(
 }
 
 export function getNxTargetOptions(target: string, context: ExecutorContext) {
-  const targetObj = parseTargetString(target, context.projectGraph);
+  const targetObj = parseTargetString(target, context);
   return readTargetOptions(targetObj, context);
 }

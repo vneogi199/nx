@@ -1,6 +1,5 @@
 import {
   addDependenciesToPackageJson,
-  convertNxGenerator,
   detectPackageManager,
   formatFiles,
   GeneratorCallback,
@@ -12,7 +11,10 @@ import { Schema } from './schema';
 
 import { jestInitGenerator } from '@nx/jest';
 import { detoxInitGenerator } from '@nx/detox';
-import { babelPresetReactVersion } from '@nx/react/src/utils/versions';
+import {
+  babelCoreVersion,
+  babelPresetReactVersion,
+} from '@nx/react/src/utils/versions';
 import { initGenerator as jsInitGenerator } from '@nx/js';
 
 import {
@@ -24,6 +26,7 @@ import {
   reactNativeCommunityCli,
   reactNativeCommunityCliAndroid,
   reactNativeCommunityCliIos,
+  reactNativeMetroConfigVersion,
   reactNativeSvgTransformerVersion,
   reactNativeSvgVersion,
   reactNativeVersion,
@@ -32,7 +35,6 @@ import {
   testingLibraryJestNativeVersion,
   testingLibraryReactNativeVersion,
   typesNodeVersion,
-  typesReactNativeVersion,
   typesReactVersion,
 } from '../../utils/versions';
 
@@ -89,7 +91,7 @@ export function updateDependencies(host: Tree) {
       '@nx/react-native': nxVersion,
       '@types/node': typesNodeVersion,
       '@types/react': typesReactVersion,
-      '@types/react-native': typesReactNativeVersion,
+      '@react-native/metro-config': reactNativeMetroConfigVersion,
       '@react-native-community/cli': reactNativeCommunityCli,
       '@react-native-community/cli-platform-android':
         reactNativeCommunityCliAndroid,
@@ -98,6 +100,7 @@ export function updateDependencies(host: Tree) {
       '@testing-library/jest-native': testingLibraryJestNativeVersion,
       'jest-react-native': jestReactNativeVersion,
       metro: metroVersion,
+      'metro-config': metroVersion,
       'metro-resolver': metroVersion,
       'metro-babel-register': metroVersion,
       'metro-react-native-babel-preset': metroVersion,
@@ -106,9 +109,9 @@ export function updateDependencies(host: Tree) {
       'react-native-svg-transformer': reactNativeSvgTransformerVersion,
       'react-native-svg': reactNativeSvgVersion,
       '@babel/preset-react': babelPresetReactVersion,
+      '@babel/core': babelCoreVersion,
       ...(isPnpm
         ? {
-            'metro-config': metroVersion, // metro-config is used by metro.config.js
             '@babel/runtime': babelRuntimeVersion, // @babel/runtime is used by react-native-svg
           }
         : {}),
@@ -121,6 +124,3 @@ function moveDependency(host: Tree) {
 }
 
 export default reactNativeInitGenerator;
-export const reactNativeInitSchematic = convertNxGenerator(
-  reactNativeInitGenerator
-);

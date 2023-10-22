@@ -8,6 +8,10 @@ The Nx Plugin for Web Components contains generators for managing Web Component 
 
 To create a new workspace with web, run `npx create-nx-workspace@latest --preset=web-components`.
 
+{% callout type="note" title="Keep Nx Package Versions In Sync" %}
+Make sure to install the `@nx/web` version that matches the version of `nx` in your repository. If the version numbers get out of sync, you can encounter some difficult to debug errors. You can [fix Nx version mismatches with this recipe](/recipes/tips-n-tricks/keep-nx-versions-in-sync).
+{% /callout %}
+
 To add the web plugin to an existing workspace, run one of the following:
 
 ```shell
@@ -31,12 +35,12 @@ The application uses no framework and generates with web components. You can add
 To start the application in development mode, run `nx serve my-new-app`.
 
 {% callout type="note" title="React" %}
-If you are looking to add a React application, check out the [React plugin](/packages/react).
+If you are looking to add a React application, check out the [React plugin](/nx-api/react).
 {% /callout %}
 
 ### Creating Libraries
 
-To create a generic TypeScript library (i.e. non-framework specific), use the [`@nx/js`](/packages/js) plugin.
+To create a generic TypeScript library (i.e. non-framework specific), use the [`@nx/js`](/nx-api/js) plugin.
 
 ```shell
 nx g @nx/js:lib my-new-lib
@@ -94,5 +98,5 @@ The library in `dist` is publishable to npm or a private registry.
 
 ## More Documentation
 
-- [Using Cypress](/packages/cypress)
-- [Using Jest](/packages/jest)
+- [Using Cypress](/nx-api/cypress)
+- [Using Jest](/nx-api/jest)

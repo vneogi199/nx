@@ -1,5 +1,5 @@
 import { ProjectGraph, ProjectGraphProjectNode } from '../config/project-graph';
-import { getDependencyConfigs, interpolate } from './utils';
+import { getDependencyConfigs, getOutputs, interpolate } from './utils';
 import {
   projectHasTarget,
   projectHasTargetAndConfiguration,
@@ -329,11 +329,24 @@ export class ProcessTasks {
       configuration: resolvedConfiguration,
     };
 
+    const interpolatedOverrides = interpolateOverrides(
+      overrides,
+      project.name,
+      project.data
+    );
+
     return {
       id,
       target: qualifiedTarget,
       projectRoot: project.data.root,
-      overrides: interpolateOverrides(overrides, project.name, project.data),
+      overrides: interpolatedOverrides,
+      outputs: getOutputs(
+        this.projectGraph.nodes,
+        qualifiedTarget,
+        interpolatedOverrides
+      ),
+      // TODO(v18): Remove cast here after typing is moved back onto TargetConfiguration
+      cache: (project.data.targets[target] as any).cache,
     };
   }
 
@@ -388,10 +401,10 @@ export function createTaskGraph(
 }
 
 export function mapTargetDefaultsToDependencies(
-  defaults: TargetDefaults
+  defaults: TargetDefaults | undefined
 ): TargetDependencies {
   const res = {};
-  Object.keys(defaults).forEach((k) => {
+  Object.keys(defaults ?? {}).forEach((k) => {
     res[k] = defaults[k].dependsOn;
   });
 

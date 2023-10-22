@@ -1,7 +1,7 @@
 import { installedCypressVersion } from '@nx/cypress/src/utils/cypress-version';
 import { readJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 import libraryGenerator from './library';
 import { Schema } from './schema';
 
@@ -22,24 +22,18 @@ describe('next library', () => {
       unitTestRunner: 'jest',
       style: 'css',
       component: true,
+      projectNameAndRootFormat: 'as-provided',
     };
-    const appTree = createTreeWithEmptyWorkspace({ layout: 'apps-libs' });
+    const appTree = createTreeWithEmptyWorkspace();
 
     await libraryGenerator(appTree, {
       ...baseOptions,
-      name: 'myLib',
+      name: 'my-lib',
     });
-    const tsconfigFiles = readJson(
-      appTree,
-      'libs/my-lib/tsconfig.lib.json'
-    ).files;
+    const tsconfigTypes = readJson(appTree, 'my-lib/tsconfig.lib.json')
+      .compilerOptions.types;
 
-    expect(tsconfigFiles).toContain(
-      '../../node_modules/@nx/next/typings/image.d.ts'
-    );
-    expect(tsconfigFiles).not.toContain(
-      '../../node_modules/@nx/react/typings/image.d.ts'
-    );
+    expect(tsconfigTypes).toContain('@nx/next/typings/image.d.ts');
   });
 
   it('should add jsxImportSource in tsconfig.json for @emotion/styled', async () => {
@@ -51,27 +45,26 @@ describe('next library', () => {
       unitTestRunner: 'jest',
       style: 'css',
       component: true,
+      projectNameAndRootFormat: 'as-provided',
     };
 
-    const appTree = createTreeWithEmptyWorkspace({ layout: 'apps-libs' });
+    const appTree = createTreeWithEmptyWorkspace();
 
     await libraryGenerator(appTree, {
       ...baseOptions,
-      name: 'myLib',
+      name: 'my-lib',
     });
     await libraryGenerator(appTree, {
       ...baseOptions,
-      name: 'myLib2',
+      name: 'my-lib2',
       style: '@emotion/styled',
     });
 
     expect(
-      readJson(appTree, 'libs/my-lib/tsconfig.json').compilerOptions
-        .jsxImportSource
+      readJson(appTree, 'my-lib/tsconfig.json').compilerOptions.jsxImportSource
     ).not.toBeDefined();
     expect(
-      readJson(appTree, 'libs/my-lib2/tsconfig.json').compilerOptions
-        .jsxImportSource
+      readJson(appTree, 'my-lib2/tsconfig.json').compilerOptions.jsxImportSource
     ).toEqual('@emotion/react');
   });
 
@@ -79,13 +72,14 @@ describe('next library', () => {
     const appTree = createTreeWithEmptyWorkspace();
 
     await libraryGenerator(appTree, {
-      name: 'myLib',
+      name: 'my-lib',
       linter: Linter.EsLint,
       skipFormat: false,
       skipTsConfig: false,
       unitTestRunner: 'jest',
       style: 'css',
       component: true,
+      projectNameAndRootFormat: 'as-provided',
     });
 
     expect(appTree.read('my-lib/src/index.ts', 'utf-8')).toContain(
@@ -100,5 +94,27 @@ describe('next library', () => {
       '@proj/my-lib': ['my-lib/src/index.ts'],
       '@proj/my-lib/server': ['my-lib/src/server.ts'],
     });
+  });
+
+  it('should not add cypress dependencies', async () => {
+    const appTree = createTreeWithEmptyWorkspace();
+
+    await libraryGenerator(appTree, {
+      name: 'my-lib',
+      linter: Linter.EsLint,
+      skipFormat: false,
+      skipTsConfig: false,
+      unitTestRunner: 'jest',
+      style: 'css',
+      component: false,
+      projectNameAndRootFormat: 'as-provided',
+    });
+
+    expect(
+      readJson(appTree, 'package.json').devDependencies['@nx/cypress']
+    ).toBeUndefined();
+    expect(
+      readJson(appTree, 'package.json').devDependencies['cypress']
+    ).toBeUndefined();
   });
 });

@@ -1,6 +1,6 @@
 import { readProjectConfiguration, Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 import { libraryGenerator } from '@nx/js';
 import { addLinting } from './add-linting';
 
@@ -8,10 +8,11 @@ describe('Add Linting', () => {
   let tree: Tree;
 
   beforeEach(async () => {
-    tree = createTreeWithEmptyWorkspace({ layout: 'apps-libs' });
+    tree = createTreeWithEmptyWorkspace();
     await libraryGenerator(tree, {
       name: 'my-lib',
       linter: Linter.None,
+      projectNameAndRootFormat: 'as-provided',
     });
   });
 
@@ -19,21 +20,21 @@ describe('Add Linting', () => {
     addLinting(tree, {
       projectName: 'my-lib',
       linter: Linter.EsLint,
-      tsConfigPaths: ['libs/my-lib/tsconfig.lib.json'],
-      projectRoot: 'libs/my-lib',
+      tsConfigPaths: ['my-lib/tsconfig.lib.json'],
+      projectRoot: 'my-lib',
     });
     const project = readProjectConfiguration(tree, 'my-lib');
 
     expect(project.targets.lint).toBeDefined();
-    expect(project.targets.lint.executor).toEqual('@nx/linter:eslint');
+    expect(project.targets.lint.executor).toEqual('@nx/eslint:lint');
   });
 
   it('should not add lint target when "none" is passed', async () => {
     addLinting(tree, {
       projectName: 'my-lib',
       linter: Linter.None,
-      tsConfigPaths: ['libs/my-lib/tsconfig.lib.json'],
-      projectRoot: 'libs/my-lib',
+      tsConfigPaths: ['my-lib/tsconfig.lib.json'],
+      projectRoot: 'my-lib',
     });
     const project = readProjectConfiguration(tree, 'my-lib');
 

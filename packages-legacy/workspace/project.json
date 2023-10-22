@@ -5,6 +5,7 @@
   "projectType": "library",
   "targets": {
     "build": {
+      "outputs": ["{workspaceRoot}/build/packages/{projectName}/README.md"],
       "command": "node ./scripts/copy-readme.js workspace-legacy"
     },
     "build-base": {
@@ -14,7 +15,6 @@
         "main": "packages-legacy/workspace/index.ts",
         "tsConfig": "packages-legacy/workspace/tsconfig.json",
         "outputPath": "build/packages/workspace-legacy",
-        "updateBuildableProjectDepsInPackageJson": false,
         "assets": [
           {
             "input": "packages-legacy/workspace",

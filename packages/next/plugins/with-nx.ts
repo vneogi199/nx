@@ -2,12 +2,53 @@
  * WARNING: Do not add development dependencies to top-level imports.
  * Instead, `require` them inline during the build phase.
  */
-import * as path from 'path';
 import type { NextConfig } from 'next';
 import type { NextConfigFn } from '../src/utils/config';
 import type { NextBuildBuilderOptions } from '../src/utils/types';
 import type { DependentBuildableProjectNode } from '@nx/js/src/utils/buildable-libs-utils';
-import type { ProjectGraph, ProjectGraphProjectNode, Target } from '@nx/devkit';
+import type {
+  ExecutorContext,
+  ProjectGraph,
+  ProjectGraphProjectNode,
+  Target,
+} from '@nx/devkit';
+
+const baseNXEnvironmentVariables = [
+  'NX_BASE',
+  'NX_CACHE_DIRECTORY',
+  'NX_CACHE_PROJECT_GRAPH',
+  'NX_DAEMON',
+  'NX_DEFAULT_PROJECT',
+  'NX_HEAD',
+  'NX_PERF_LOGGING',
+  'NX_PROFILE',
+  'NX_PROJECT_GRAPH_CACHE_DIRECTORY',
+  'NX_INVOKED_BY_RUNNER', // This is from nx cloud runner
+  'NX_PROJECT_GRAPH_MAX_WORKERS',
+  'NX_RUNNER',
+  'NX_SKIP_NX_CACHE',
+  'NX_TASKS_RUNNER',
+  'NX_TASKS_RUNNER_DYNAMIC_OUTPUT',
+  'NX_VERBOSE_LOGGING',
+  'NX_DRY_RUN',
+  'NX_INTERACTIVE',
+  'NX_GENERATE_QUIET',
+  'NX_PREFER_TS_NODE',
+  'NX_TASK_TARGET_PROJECT',
+  'NX_TASK_TARGET_TARGET',
+  'NX_TASK_TARGET_CONFIGURATION',
+  'NX_CLI_SET',
+  'NX_LOAD_DOT_ENV_FILES',
+  'NX_WORKSPACE_ROOT',
+  'NX_TASK_HASH',
+  'NX_NEXT_DIR',
+  'NX_NEXT_OUTPUT_PATH',
+  'NX_E2E_RUN_E2E',
+  'NX_E2E_CI_CACHE_KEY',
+  'NX_MAPPINGS',
+  'NX_FILE_TO_RUN',
+  'NX_NEXT_PUBLIC_DIR',
+];
 
 export interface WithNxOptions extends NextConfig {
   nx?: {
@@ -44,21 +85,6 @@ function getWithNxContext(): WithNxContext {
   };
 }
 
-function getTargetConfig(graph: ProjectGraph, target: Target) {
-  const projectNode = graph.nodes[target.project];
-  return projectNode.data.targets[target.target];
-}
-
-function getOptions(graph: ProjectGraph, target: Target) {
-  const targetConfig = getTargetConfig(graph, target);
-  const options = targetConfig.options;
-  if (target.configuration) {
-    Object.assign(options, targetConfig.configurations[target.configuration]);
-  }
-
-  return options;
-}
-
 function getNxContext(
   graph: ProjectGraph,
   target: Target
@@ -69,47 +95,48 @@ function getNxContext(
   targetName: string;
   configurationName?: string;
 } {
-  const { parseTargetString } = require('@nx/devkit');
-  const targetConfig = getTargetConfig(graph, target);
-
-  if (
-    '@nx/next:build' === targetConfig.executor ||
-    '@nrwl/next:build' === targetConfig.executor
-  ) {
-    return {
-      node: graph.nodes[target.project],
-      options: getOptions(graph, target),
-      projectName: target.project,
-      targetName: target.target,
-      configurationName: target.configuration,
-    };
+  const { parseTargetString, workspaceRoot } = require('@nx/devkit');
+  const projectNode = graph.nodes[target.project];
+  const targetConfig = projectNode.data.targets[target.target];
+  const targetOptions = targetConfig.options;
+  if (target.configuration) {
+    Object.assign(
+      targetOptions,
+      targetConfig.configurations[target.configuration]
+    );
   }
 
-  const targetOptions = getOptions(graph, target);
+  const partialExecutorContext: Partial<ExecutorContext> = {
+    projectName: target.project,
+    targetName: target.target,
+    projectGraph: graph,
+    configurationName: target.configuration,
+    root: workspaceRoot,
+  };
 
-  // If we are running serve or export pull the options from the dependent target first (ex. build)
   if (targetOptions.devServerTarget) {
-    const devServerTarget = parseTargetString(
-      targetOptions.devServerTarget,
-      graph
+    // Executors such as @nx/cypress:cypress define the devServerTarget option.
+    return getNxContext(
+      graph,
+      parseTargetString(targetOptions.devServerTarget, partialExecutorContext)
     );
-
-    return getNxContext(graph, devServerTarget);
-  } else if (
-    [
-      '@nx/next:server',
-      '@nx/next:export',
-      '@nrwl/next:server',
-      '@nrwl/next:export',
-    ].includes(targetConfig.executor)
-  ) {
-    const buildTarget = parseTargetString(targetOptions.buildTarget, graph);
-    return getNxContext(graph, buildTarget);
-  } else {
-    throw new Error(
-      'Could not determine the config for this Next application.'
+  } else if (targetOptions.buildTarget) {
+    // Executors such as @nx/next:server or @nx/next:export define the buildTarget option.
+    return getNxContext(
+      graph,
+      parseTargetString(targetOptions.buildTarget, partialExecutorContext)
     );
   }
+
+  // Default case, return info for current target.
+  // This could be a build using @nx/next:build or run-commands without using our executors.
+  return {
+    node: graph.nodes[target.project],
+    options: targetOptions,
+    projectName: target.project,
+    targetName: target.target,
+    configurationName: target.configuration,
+  };
 }
 
 /**
@@ -194,13 +221,21 @@ function withNx(
         }
       });
 
-      const outputDir = `${offsetFromRoot(projectDirectory)}${
-        options.outputPath
-      }`;
-      nextConfig.distDir =
-        nextConfig.distDir && nextConfig.distDir !== '.next'
-          ? joinPathFragments(outputDir, nextConfig.distDir)
-          : joinPathFragments(outputDir, '.next');
+      // process.env.NX_NEXT_OUTPUT_PATH is set when running @nx/next:build
+      options.outputPath =
+        process.env.NX_NEXT_OUTPUT_PATH || options.outputPath;
+
+      // outputPath may be undefined if using run-commands or other executors other than @nx/next:build.
+      // In this case, the user should set distDir in their next.config.js.
+      if (options.outputPath) {
+        const outputDir = `${offsetFromRoot(projectDirectory)}${
+          options.outputPath
+        }`;
+        nextConfig.distDir =
+          nextConfig.distDir && nextConfig.distDir !== '.next'
+            ? joinPathFragments(outputDir, nextConfig.distDir)
+            : joinPathFragments(outputDir, '.next');
+      }
 
       const userWebpackConfig = nextConfig.webpack;
 
@@ -210,9 +245,7 @@ function withNx(
           workspaceRoot,
           projectDirectory,
           options.fileReplacements,
-          options.assets,
-          dependencies,
-          path.join(workspaceRoot, context.libsDir)
+          options.assets
         )(userWebpackConfig ? userWebpackConfig(a, b) : a, b);
 
       return nextConfig;
@@ -381,6 +414,12 @@ export function getNextConfig(
   };
 }
 
+function getNonBaseVariables(oldEnv) {
+  return Object.keys(oldEnv).filter(
+    (env) => !baseNXEnvironmentVariables.includes(env)
+  );
+}
+
 function getNxEnvironmentVariables() {
   return Object.keys(process.env)
     .filter((env) => /^NX_/i.test(env))
@@ -390,6 +429,12 @@ function getNxEnvironmentVariables() {
     }, {});
 }
 
+let hasWarnedAboutDeprecatedEnvVariables = false;
+
+/**
+ * TODO(v18)
+ * @deprecated Use Next.js 9.4+ built-in support for environment variables. Reference https://nextjs.org/docs/pages/api-reference/next-config-js/env
+ */
 function addNxEnvVariables(config: any) {
   const maybeDefinePlugin = config.plugins?.find((plugin) => {
     return plugin.definitions?.['process.env.NODE_ENV'];
@@ -404,6 +449,16 @@ function addNxEnvVariables(config: any) {
       .forEach(
         ([name, value]) => (maybeDefinePlugin.definitions[name] = value)
       );
+
+    const vars = getNonBaseVariables(env);
+    if (vars.length > 0 && !hasWarnedAboutDeprecatedEnvVariables) {
+      hasWarnedAboutDeprecatedEnvVariables = true;
+      console.warn(
+        `Warning, in Nx 18 environment variables starting with NX_ will not be available in the browser, and currently will not work with @nx/next:server executor.\nPlease rename the following environment variables: ${vars.join(
+          ', '
+        )} using Next.js' built-in support for environment variables. Reference https://nextjs.org/docs/pages/api-reference/next-config-js/env`
+      );
+    }
   }
 }
 

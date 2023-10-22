@@ -1,6 +1,5 @@
 import {
   addDependenciesToPackageJson,
-  convertNxGenerator,
   formatFiles,
   GeneratorCallback,
   removeDependenciesFromPackageJson,
@@ -28,7 +27,6 @@ import {
   reactVersion,
   testingLibraryJestNativeVersion,
   testingLibraryReactNativeVersion,
-  typesReactNativeVersion,
   typesReactVersion,
 } from '../../utils/versions';
 
@@ -95,7 +93,6 @@ export function updateDependencies(host: Tree) {
     {
       '@nx/expo': nxVersion,
       '@types/react': typesReactVersion,
-      '@types/react-native': typesReactNativeVersion,
       metro: metroVersion,
       'metro-resolver': metroVersion,
       'react-test-renderer': reactTestRendererVersion,
@@ -114,4 +111,3 @@ function moveDependency(host: Tree) {
 }
 
 export default expoInitGenerator;
-export const expoInitSchematic = convertNxGenerator(expoInitGenerator);

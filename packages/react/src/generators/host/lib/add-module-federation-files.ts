@@ -1,7 +1,6 @@
 import { NormalizedSchema } from '../schema';
-import { generateFiles, names } from '@nx/devkit';
+import { generateFiles, joinPathFragments, names } from '@nx/devkit';
 import { join } from 'path';
-import { normalizeProjectName } from '../../application/lib/normalize-options';
 
 export function addModuleFederationFiles(
   host,
@@ -13,9 +12,8 @@ export function addModuleFederationFiles(
     ...options,
     tmpl: '',
     remotes: defaultRemoteManifest.map(({ name, port }) => {
-      const remote = normalizeProjectName({ ...options, name });
       return {
-        ...names(remote),
+        ...names(name),
         port,
       };
     }),
@@ -36,11 +34,31 @@ export function addModuleFederationFiles(
     templateVariables
   );
 
+  const pathToModuleFederationFiles = options.typescriptConfiguration
+    ? 'module-federation-ts'
+    : 'module-federation';
   // New entry file is created here.
   generateFiles(
     host,
-    join(__dirname, `../files/module-federation`),
+    join(__dirname, `../files/${pathToModuleFederationFiles}`),
     options.appProjectRoot,
     templateVariables
   );
+
+  if (options.typescriptConfiguration) {
+    const pathToWebpackConfig = joinPathFragments(
+      options.appProjectRoot,
+      'webpack.config.js'
+    );
+    const pathToWebpackProdConfig = joinPathFragments(
+      options.appProjectRoot,
+      'webpack.config.prod.js'
+    );
+    if (host.exists(pathToWebpackConfig)) {
+      host.delete(pathToWebpackConfig);
+    }
+    if (host.exists(pathToWebpackProdConfig)) {
+      host.delete(pathToWebpackProdConfig);
+    }
+  }
 }

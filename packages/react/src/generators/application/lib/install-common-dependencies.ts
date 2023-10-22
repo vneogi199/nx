@@ -1,9 +1,9 @@
 import { addDependenciesToPackageJson, Tree } from '@nx/devkit';
 import {
+  babelCoreVersion,
   babelPresetReactVersion,
   lessVersion,
   sassVersion,
-  stylusVersion,
   swcLoaderVersion,
 } from '../../../utils/versions';
 import { NormalizedSchema } from '../schema';
@@ -24,9 +24,6 @@ export function installCommonDependencies(
       case 'less':
         devDependencies['less'] = lessVersion;
         break;
-      case 'styl': // @TODO(17): deprecated, going to be removed in Nx 17
-        devDependencies['stylus'] = stylusVersion;
-        break;
     }
   }
 
@@ -37,6 +34,7 @@ export function installCommonDependencies(
       // babel-loader is currently included in @nx/webpack
       // TODO(jack): Install babel-loader and other babel packages only as needed
       devDependencies['@babel/preset-react'] = babelPresetReactVersion;
+      devDependencies['@babel/core'] = babelCoreVersion;
     }
   }
 

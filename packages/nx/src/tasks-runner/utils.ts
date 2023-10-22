@@ -1,21 +1,15 @@
 import { output } from '../utils/output';
-import { Workspaces } from '../config/workspaces';
-import { mergeNpmScriptsWithTargets } from '../utils/project-graph-utils';
-import { existsSync } from 'fs';
-import { join, relative } from 'path';
-import {
-  loadNxPlugins,
-  mergePluginTargetsWithNxTargets,
-} from '../utils/nx-plugin';
+import { relative } from 'path';
 import { Task, TaskGraph } from '../config/task-graph';
 import { ProjectGraph, ProjectGraphProjectNode } from '../config/project-graph';
 import { TargetDependencyConfig } from '../config/workspace-json-project-json';
 import { workspaceRoot } from '../utils/workspace-root';
-import { NxJsonConfiguration } from '../config/nx-json';
 import { joinPathFragments } from '../utils/path';
 import { isRelativePath } from '../utils/fileutils';
 import { serializeOverridesIntoCommandLine } from '../utils/serialize-overrides-into-command-line';
-import { splitByColons, splitTarget } from '../utils/split-target';
+import { splitByColons } from '../utils/split-target';
+import { getExecutorInformation } from '../command-line/run/executor-utils';
+import { CustomHasher } from '../config/misc-interfaces';
 
 export function getCommandAsString(execCommand: string, task: Task) {
   const args = getPrintableCommandArgsForTask(task);
@@ -87,9 +81,14 @@ export function expandDependencyConfigSyntaxSugar(
 
 export function getOutputs(
   p: Record<string, ProjectGraphProjectNode>,
-  task: Task
+  target: Task['target'],
+  overrides: Task['overrides']
 ) {
-  return getOutputsForTargetAndConfiguration(task, p[task.target.project]);
+  return getOutputsForTargetAndConfiguration(
+    target,
+    overrides,
+    p[target.project]
+  );
 }
 
 class InvalidOutputsError extends Error {
@@ -139,38 +138,43 @@ export function transformLegacyOutputs(
 }
 
 /**
- * Returns the list of outputs that will be cached.
- * @param task target + overrides
- * @param node ProjectGraphProjectNode object that the task runs against
+ * @deprecated Pass the target and overrides instead. This will be removed in v18.
  */
 export function getOutputsForTargetAndConfiguration(
-  task: Pick<Task, 'target' | 'overrides'>,
+  task: Task,
   node: ProjectGraphProjectNode
+): string[];
+export function getOutputsForTargetAndConfiguration(
+  target: Task['target'] | Task,
+  overrides: Task['overrides'] | ProjectGraphProjectNode,
+  node: ProjectGraphProjectNode
+): string[];
+/**
+ * Returns the list of outputs that will be cached.
+ */
+export function getOutputsForTargetAndConfiguration(
+  taskTargetOrTask: Task['target'] | Task,
+  overridesOrNode: Task['overrides'] | ProjectGraphProjectNode,
+  node?: ProjectGraphProjectNode
 ): string[] {
-  const { target, configuration } = task.target;
+  const taskTarget =
+    'id' in taskTargetOrTask ? taskTargetOrTask.target : taskTargetOrTask;
+  const overrides =
+    'id' in taskTargetOrTask ? taskTargetOrTask.overrides : overridesOrNode;
+  node = 'id' in taskTargetOrTask ? overridesOrNode : node;
+
+  const { target, configuration } = taskTarget;
 
   const targetConfiguration = node.data.targets[target];
 
   const options = {
     ...targetConfiguration.options,
     ...targetConfiguration?.configurations?.[configuration],
-    ...task.overrides,
+    ...overrides,
   };
 
   if (targetConfiguration?.outputs) {
-    try {
-      validateOutputs(targetConfiguration.outputs);
-    } catch (error) {
-      if (error instanceof InvalidOutputsError) {
-        // TODO(v16): start warning for invalid outputs
-        targetConfiguration.outputs = transformLegacyOutputs(
-          node.data.root,
-          error
-        );
-      } else {
-        throw error;
-      }
-    }
+    validateOutputs(targetConfiguration.outputs);
 
     return targetConfiguration.outputs
       .map((output: string) => {
@@ -181,7 +185,10 @@ export function getOutputsForTargetAndConfiguration(
           options,
         });
       })
-      .filter((output) => !!output && !output.match(/{.*}/));
+      .filter(
+        (output) =>
+          !!output && !output.match(/{(projectRoot|workspaceRoot|(options.*))}/)
+      );
   }
 
   // Keep backwards compatibility in case `outputs` doesn't exist
@@ -243,25 +250,19 @@ export async function getExecutorNameForTask(
 
 export async function getExecutorForTask(
   task: Task,
-  workspace: Workspaces,
-  projectGraph: ProjectGraph,
-  nxJson: NxJsonConfiguration
+  projectGraph: ProjectGraph
 ) {
   const executor = await getExecutorNameForTask(task, projectGraph);
   const [nodeModule, executorName] = executor.split(':');
 
-  return workspace.readExecutor(nodeModule, executorName);
+  return getExecutorInformation(nodeModule, executorName, workspaceRoot);
 }
 
 export async function getCustomHasher(
   task: Task,
-  workspace: Workspaces,
-  nxJson: NxJsonConfiguration,
   projectGraph: ProjectGraph
-) {
-  const factory = (
-    await getExecutorForTask(task, workspace, projectGraph, nxJson)
-  ).hasherFactory;
+): Promise<CustomHasher> | null {
+  const factory = (await getExecutorForTask(task, projectGraph)).hasherFactory;
   return factory ? factory() : null;
 }
 
@@ -336,11 +337,7 @@ export function getSerializedArgsForTask(task: Task, isVerbose: boolean) {
 
 export function shouldStreamOutput(
   task: Task,
-  initiatingProject: string | null,
-  options: {
-    cacheableOperations?: string[] | null;
-    cacheableTargets?: string[] | null;
-  }
+  initiatingProject: string | null
 ): boolean {
   if (process.env.NX_STREAM_OUTPUT === 'true') return true;
   if (longRunningTask(task)) return true;
@@ -355,6 +352,10 @@ export function isCacheableTask(
     cacheableTargets?: string[] | null;
   }
 ): boolean {
+  if (task.cache !== undefined && !longRunningTask(task)) {
+    return task.cache;
+  }
+
   const cacheable = options.cacheableOperations || options.cacheableTargets;
   return (
     cacheable &&

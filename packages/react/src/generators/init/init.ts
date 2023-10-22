@@ -1,6 +1,5 @@
 import {
   addDependenciesToPackageJson,
-  convertNxGenerator,
   ensurePackage,
   GeneratorCallback,
   readNxJson,
@@ -12,7 +11,6 @@ import {
 
 import { initGenerator as jsInitGenerator } from '@nx/js';
 import {
-  babelPresetReactVersion,
   nxVersion,
   reactDomVersion,
   reactVersion,
@@ -95,5 +93,3 @@ export async function reactInitGenerator(host: Tree, schema: InitSchema) {
 }
 
 export default reactInitGenerator;
-
-export const reactInitSchematic = convertNxGenerator(reactInitGenerator);

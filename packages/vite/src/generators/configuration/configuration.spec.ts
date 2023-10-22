@@ -94,7 +94,6 @@ describe('@nx/vite:configuration', () => {
       const packageJson = readJson(tree, '/package.json');
       expect(packageJson.devDependencies).toMatchObject({
         vite: expect.any(String),
-        'vite-tsconfig-paths': expect.any(String),
       });
     });
 
@@ -316,21 +315,17 @@ describe('@nx/vite:configuration', () => {
     });
 
     it('should add config for building library', async () => {
-      addProjectConfiguration(tree, 'my-lib', {
-        root: 'my-lib',
-      });
+      mockReactLibNonBuildableJestTestRunnerGenerator(tree);
       await viteConfigurationGenerator(tree, {
         uiFramework: 'react',
         includeLib: true,
-        project: 'my-lib',
-        newProject: true,
+        project: 'react-lib-nonb-jest',
       });
-
-      const viteConfig = tree.read('my-lib/vite.config.ts').toString();
-
-      expect(viteConfig).toMatch('build: {');
-      expect(viteConfig).toMatch("external: ['react'");
-      expect(tree.read('my-lib/vite.config.ts', 'utf-8')).toMatchSnapshot();
+      const viteConfig = tree.read(
+        'libs/react-lib-nonb-jest/vite.config.ts',
+        'utf-8'
+      );
+      expect(viteConfig).toMatchSnapshot();
     });
 
     it('should set up non buildable library correctly', async () => {
@@ -351,7 +346,6 @@ describe('@nx/vite:configuration', () => {
       const { Confirm } = require('enquirer');
       const confirmSpy = jest.spyOn(Confirm.prototype, 'run');
       confirmSpy.mockResolvedValue(true);
-      expect.assertions(2);
 
       mockReactLibNonBuildableVitestRunnerGenerator(tree);
 

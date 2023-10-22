@@ -1,19 +1,20 @@
-import { output, PackageManager } from '@nx/devkit';
+import { output, PackageManager, ProjectConfiguration } from '@nx/devkit';
 import { packageInstall, tmpProjPath } from './create-project-utils';
 import {
   detectPackageManager,
   ensureCypressInstallation,
+  ensurePlaywrightBrowsersInstallation,
   getNpmMajorVersion,
   getPublishedVersion,
   getStrippedEnvironmentVariables,
+  getYarnMajorVersion,
   isVerboseE2ERun,
 } from './get-env-info';
 import { TargetConfiguration } from '@nx/devkit';
 import { ChildProcess, exec, execSync, ExecSyncOptions } from 'child_process';
 import { join } from 'path';
 import * as isCI from 'is-ci';
-import { Workspaces } from '../../packages/nx/src/config/workspaces';
-import { fileExists, readJson, updateFile } from './file-utils';
+import { fileExists, readJson, updateJson } from './file-utils';
 import { logError, stripConsoleColors } from './log-utils';
 import { existsSync } from 'fs-extra';
 
@@ -32,13 +33,9 @@ export interface RunCmdOpts {
  *
  * maxWorkers required for: node, web, jest
  */
-export function setMaxWorkers() {
+export function setMaxWorkers(projectJsonPath: string) {
   if (isCI) {
-    const ws = new Workspaces(tmpProjPath());
-    const projectsConfigurations = ws.readProjectsConfigurations();
-
-    Object.keys(projectsConfigurations.projects).forEach((appName) => {
-      let project = projectsConfigurations.projects[appName];
+    updateJson<ProjectConfiguration>(projectJsonPath, (project) => {
       const { build } = project.targets as {
         [targetName: string]: TargetConfiguration<any>;
       };
@@ -56,10 +53,7 @@ export function setMaxWorkers() {
         build.options.maxWorkers = 4;
       }
 
-      updateFile(
-        join(project.root, 'project.json'),
-        JSON.stringify(project, null, 2)
-      );
+      return project;
     });
   }
 }
@@ -119,6 +113,7 @@ export function getPackageManagerCommand({
   runLerna: string;
 } {
   const npmMajorVersion = getNpmMajorVersion();
+  const yarnMajorVersion = getYarnMajorVersion(path);
   const publishedVersion = getPublishedVersion();
   const isYarnWorkspace = fileExists(join(path, 'package.json'))
     ? readJson('package.json').workspaces
@@ -128,7 +123,7 @@ export function getPackageManagerCommand({
   return {
     npm: {
       createWorkspace: `npx ${
-        +npmMajorVersion >= 7 ? '--yes' : ''
+        npmMajorVersion && +npmMajorVersion >= 7 ? '--yes' : ''
       } create-nx-workspace@${publishedVersion}`,
       run: (script: string, args: string) => `npm run ${script} -- ${args}`,
       runNx: `npx nx`,
@@ -143,18 +138,24 @@ export function getPackageManagerCommand({
     },
     yarn: {
       createWorkspace: `npx ${
-        +npmMajorVersion >= 7 ? '--yes' : ''
+        npmMajorVersion && +npmMajorVersion >= 7 ? '--yes' : ''
       } create-nx-workspace@${publishedVersion}`,
       run: (script: string, args: string) => `yarn ${script} ${args}`,
       runNx: `yarn nx`,
-      runNxSilent: `yarn --silent nx`,
+      runNxSilent:
+        yarnMajorVersion && +yarnMajorVersion >= 2
+          ? 'yarn nx'
+          : `yarn --silent nx`,
       runUninstalledPackage: 'npx --yes',
       install: 'yarn',
       ciInstall: 'yarn --frozen-lockfile',
       addProd: isYarnWorkspace ? 'yarn add -W' : 'yarn add',
       addDev: isYarnWorkspace ? 'yarn add -DW' : 'yarn add -D',
       list: 'yarn list --pattern',
-      runLerna: `yarn --silent lerna`,
+      runLerna:
+        yarnMajorVersion && +yarnMajorVersion >= 2
+          ? 'yarn lerna'
+          : `yarn --silent lerna`,
     },
     // Pnpm 3.5+ adds nx to
     pnpm: {
@@ -173,15 +174,23 @@ export function getPackageManagerCommand({
   }[packageManager.trim() as PackageManager];
 }
 
-export function runCypressTests() {
-  if (process.env.NX_E2E_RUN_CYPRESS === 'true') {
+export function runE2ETests() {
+  if (process.env.NX_E2E_RUN_E2E === 'true') {
     ensureCypressInstallation();
+    ensurePlaywrightBrowsersInstallation();
     return true;
-  } else {
+  }
+
+  console.warn(
+    'Not running E2E tests because NX_E2E_RUN_E2E is not set to true.'
+  );
+
+  if (process.env.NX_E2E_RUN_CYPRESS) {
     console.warn(
-      'Not running Cypress because NX_E2E_RUN_CYPRESS is not set to true.'
+      'NX_E2E_RUN_CYPRESS is deprecated, use NX_E2E_RUN_E2E instead.'
     );
   }
+
   return false;
 }
 
@@ -220,7 +229,10 @@ export function runCommandAsync(
 
 export function runCommandUntil(
   command: string,
-  criteria: (output: string) => boolean
+  criteria: (output: string) => boolean,
+  opts: RunCmdOpts = {
+    env: undefined,
+  }
 ): Promise<ChildProcess> {
   const pm = getPackageManagerCommand();
   const p = exec(`${pm.runNx} ${command}`, {
@@ -229,6 +241,7 @@ export function runCommandUntil(
     env: {
       CI: 'true',
       ...getStrippedEnvironmentVariables(),
+      ...opts.env,
       FORCE_COLOR: 'false',
     },
   });
@@ -355,10 +368,6 @@ export function runCLI(
     }
 
     const r = stripConsoleColors(logs);
-    const needsMaxWorkers = /g.*(express|nest|node|web|react):app.*/;
-    if (needsMaxWorkers.test(command)) {
-      setMaxWorkers();
-    }
 
     return r;
   } catch (e) {

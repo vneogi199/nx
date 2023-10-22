@@ -107,7 +107,7 @@ function SidebarSectionItems({ item }: { item: MenuItem }): JSX.Element {
           </>
         )}
       </h5>
-      <ul className={cx('mb-6', collapsed ? 'hidden' : '')}>
+      <ul className={cx('mb-6 ml-3', collapsed ? 'hidden' : '')}>
         {(item.children as MenuItem[]).map((subItem, index) => {
           const isActiveLink = subItem.path === withoutAnchors(router.asPath);
           if (isActiveLink && collapsed) {
@@ -119,21 +119,25 @@ function SidebarSectionItems({ item }: { item: MenuItem }): JSX.Element {
               key={subItem.id + '-' + index}
               data-testid={`section-li:${subItem.id}`}
             >
-              <Link
-                href={subItem.path}
-                className={cx(
-                  'relative block py-1 text-slate-500 transition-colors duration-200 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-300'
-                )}
-              >
-                <span
-                  className={cx('relative', {
-                    'text-md font-medium text-blue-500 dark:text-sky-500':
-                      isActiveLink,
-                  })}
+              {subItem.children.length ? (
+                <SidebarSectionItems item={subItem} />
+              ) : (
+                <Link
+                  href={subItem.path}
+                  className={cx(
+                    'relative block py-1 text-slate-500 transition-colors duration-200 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-300'
+                  )}
                 >
-                  {subItem.name}
-                </span>
-              </Link>
+                  <span
+                    className={cx('relative', {
+                      'text-md font-medium text-blue-500 dark:text-sky-500':
+                        isActiveLink,
+                    })}
+                  >
+                    {subItem.name}
+                  </span>
+                </Link>
+              )}
             </li>
           );
         })}
@@ -151,7 +155,7 @@ function CollapsibleIcon({
     <svg
       xmlns="http://www.w3.org/2000/svg"
       className={cx(
-        'h-3.5 w-3.5 text-slate-600 transition-all dark:text-slate-400',
+        'w-3.5 text-slate-600 transition-all dark:text-slate-400',
         !isCollapsed && 'rotate-90 transform'
       )}
       fill="none"
@@ -174,10 +178,9 @@ export function SidebarMobile({
 }: FloatingSidebarProps): JSX.Element {
   const router = useRouter();
   const isNxCloud: boolean = router.asPath.startsWith('/nx-cloud');
-  const isPackages: boolean = router.asPath.startsWith('/packages');
-  const isPlugins: boolean = router.asPath.startsWith('/plugins');
-  const isRecipes: boolean = router.asPath.startsWith('/recipes');
-  const isNx: boolean = !isNxCloud && !isPackages && !isPlugins && !isRecipes;
+  const isAPI: boolean = router.asPath.startsWith('/nx-api');
+  const isPlugins: boolean = router.asPath.startsWith('/extending-nx');
+  const isNx: boolean = !isNxCloud && !isAPI && !isPlugins;
 
   const sections = [
     { name: 'Home', href: '/', current: false },
@@ -188,19 +191,14 @@ export function SidebarMobile({
       current: isNxCloud,
     },
     {
-      name: 'Packages',
-      href: '/packages',
-      current: isPackages,
+      name: 'API',
+      href: '/nx-api',
+      current: isAPI,
     },
     {
-      name: 'Plugins',
-      href: '/plugins/intro/getting-started',
+      name: 'Extending Nx',
+      href: '/extending-nx/intro/getting-started',
       current: isPlugins,
-    },
-    {
-      name: 'Recipes',
-      href: '/recipes',
-      current: isRecipes,
     },
   ];
   return (

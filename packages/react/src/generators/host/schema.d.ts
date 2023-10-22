@@ -1,11 +1,13 @@
-import { Linter } from '@nx/linter';
-import { SupportedStyles } from '../../../typings';
+import type { ProjectNameAndRootFormat } from '@nx/devkit/src/generators/project-name-and-root-utils';
+import type { Linter } from '@nx/eslint';
+import type { SupportedStyles } from '../../../typings';
 
 export interface Schema {
   classComponent?: boolean;
   compiler?: 'babel' | 'swc';
   devServerPort?: number;
   directory?: string;
+  projectNameAndRootFormat?: ProjectNameAndRootFormat;
   e2eTestRunner: 'cypress' | 'none';
   globalCss?: boolean;
   js?: boolean;
@@ -22,6 +24,7 @@ export interface Schema {
   tags?: string;
   unitTestRunner: 'jest' | 'vitest' | 'none';
   minimal?: boolean;
+  typescriptConfiguration?: boolean;
 }
 
 export interface NormalizedSchema extends Schema {

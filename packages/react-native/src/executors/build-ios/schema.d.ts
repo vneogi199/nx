@@ -14,9 +14,4 @@ export interface ReactNativeBuildIosOptions extends ReactNativeStartOptions {
   xcconfig?: string;
   buildFolder?: string;
   extraParams?: string;
-
-  // nx options
-  packager: boolean; // default is true
-  install: boolean; // default is true
-  sync: boolean; // default is true
 }

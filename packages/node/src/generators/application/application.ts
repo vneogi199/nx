@@ -1,13 +1,10 @@
 import {
   addDependenciesToPackageJson,
   addProjectConfiguration,
-  convertNxGenerator,
   ensurePackage,
-  extractLayoutDirectory,
   formatFiles,
   generateFiles,
   GeneratorCallback,
-  getWorkspaceLayout,
   joinPathFragments,
   logger,
   names,
@@ -22,13 +19,13 @@ import {
   updateProjectConfiguration,
   updateTsConfigsToJs,
 } from '@nx/devkit';
-import { Linter, lintProjectGenerator } from '@nx/linter';
-import { jestProjectGenerator } from '@nx/jest';
-
+import { determineProjectNameAndRootOptions } from '@nx/devkit/src/generators/project-name-and-root-utils';
+import { configurationGenerator } from '@nx/jest';
 import { getRelativePathToRootTsConfig, tsConfigBaseOptions } from '@nx/js';
+import { esbuildVersion } from '@nx/js/src/utils/versions';
+import { Linter, lintProjectGenerator } from '@nx/eslint';
+import { mapLintPattern } from '@nx/eslint/src/generators/lint-project/lint-project';
 import { join } from 'path';
-
-import { initGenerator } from '../init/init';
 import {
   expressTypingsVersion,
   expressVersion,
@@ -41,11 +38,9 @@ import {
   nxVersion,
 } from '../../utils/versions';
 import { e2eProjectGenerator } from '../e2e-project/e2e-project';
+import { initGenerator } from '../init/init';
 import { setupDockerGenerator } from '../setup-docker/setup-docker';
-
 import { Schema } from './schema';
-import { mapLintPattern } from '@nx/linter/src/generators/lint-project/lint-project';
-import { esbuildVersion } from '@nx/js/src/utils/versions';
 
 export interface NormalizedSchema extends Schema {
   appProjectRoot: string;
@@ -364,7 +359,14 @@ function updateTsConfigOptions(tree: Tree, options: NormalizedSchema) {
 }
 
 export async function applicationGenerator(tree: Tree, schema: Schema) {
-  const options = normalizeOptions(tree, schema);
+  return await applicationGeneratorInternal(tree, {
+    projectNameAndRootFormat: 'derived',
+    ...schema,
+  });
+}
+
+export async function applicationGeneratorInternal(tree: Tree, schema: Schema) {
+  const options = await normalizeOptions(tree, schema);
   const tasks: GeneratorCallback[] = [];
 
   if (options.framework === 'nest') {
@@ -391,7 +393,7 @@ export async function applicationGenerator(tree: Tree, schema: Schema) {
   }
 
   if (options.unitTestRunner === 'jest') {
-    const jestTask = await jestProjectGenerator(tree, {
+    const jestTask = await configurationGenerator(tree, {
       ...options,
       project: options.name,
       setupFile: 'none',
@@ -414,6 +416,8 @@ export async function applicationGenerator(tree: Tree, schema: Schema) {
       ...options,
       projectType: options.framework === 'none' ? 'cli' : 'server',
       name: options.rootProject ? 'e2e' : `${options.name}-e2e`,
+      directory: options.rootProject ? 'e2e' : `${options.appProjectRoot}-e2e`,
+      projectNameAndRootFormat: 'as-provided',
       project: options.name,
       port: options.port,
       isNest: options.isNest,
@@ -447,21 +451,24 @@ export async function applicationGenerator(tree: Tree, schema: Schema) {
   return runTasksInSerial(...tasks);
 }
 
-function normalizeOptions(host: Tree, options: Schema): NormalizedSchema {
-  const { layoutDirectory, projectDirectory } = extractLayoutDirectory(
-    options.directory
-  );
-  const appsDir = layoutDirectory ?? getWorkspaceLayout(host).appsDir;
-
-  const appDirectory = projectDirectory
-    ? `${names(projectDirectory).fileName}/${names(options.name).fileName}`
-    : names(options.name).fileName;
-
-  const appProjectName = appDirectory.replace(new RegExp('/', 'g'), '-');
-
-  const appProjectRoot = options.rootProject
-    ? '.'
-    : joinPathFragments(appsDir, appDirectory);
+async function normalizeOptions(
+  host: Tree,
+  options: Schema
+): Promise<NormalizedSchema> {
+  const {
+    projectName: appProjectName,
+    projectRoot: appProjectRoot,
+    projectNameAndRootFormat,
+  } = await determineProjectNameAndRootOptions(host, {
+    name: options.name,
+    projectType: 'application',
+    directory: options.directory,
+    projectNameAndRootFormat: options.projectNameAndRootFormat,
+    rootProject: options.rootProject,
+    callingGenerator: '@nx/node:application',
+  });
+  options.rootProject = appProjectRoot === '.';
+  options.projectNameAndRootFormat = projectNameAndRootFormat;
 
   options.bundler = options.bundler ?? 'esbuild';
   options.e2eTestRunner = options.e2eTestRunner ?? 'jest';
@@ -472,7 +479,7 @@ function normalizeOptions(host: Tree, options: Schema): NormalizedSchema {
 
   return {
     ...options,
-    name: names(appProjectName).fileName,
+    name: appProjectName,
     frontendProject: options.frontendProject
       ? names(options.frontendProject).fileName
       : undefined,
@@ -486,4 +493,3 @@ function normalizeOptions(host: Tree, options: Schema): NormalizedSchema {
 }
 
 export default applicationGenerator;
-export const applicationSchematic = convertNxGenerator(applicationGenerator);

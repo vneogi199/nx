@@ -8,7 +8,7 @@ import {
   SharedLibraryConfig,
   sharePackages,
   shareWorkspaceLibraries,
-} from '@nx/devkit/src/utils/module-federation';
+} from '@nx/webpack/src/utils/module-federation';
 
 import {
   createProjectGraphAsync,
@@ -124,7 +124,9 @@ export async function getModuleFederationConfig(
   });
 
   const sharedDependencies = {
-    ...sharedLibraries.getLibraries(),
+    ...sharedLibraries.getLibraries(
+      projectGraph.nodes[mfConfig.name].data.root
+    ),
     ...npmPackages,
   };
 

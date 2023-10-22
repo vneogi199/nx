@@ -32,6 +32,8 @@ describe('new', () => {
 
   beforeEach(() => {
     tree = createTree();
+    // we need an actual path for the package manager version check
+    tree.root = process.cwd();
   });
 
   it('should generate an empty nx.json', async () => {
@@ -51,7 +53,7 @@ describe('new', () => {
         name: 'my-workspace',
         directory: 'my-workspace',
         appName: 'app',
-        preset: Preset.Empty,
+        preset: Preset.Apps,
       });
 
       expect(readJson(tree, 'my-workspace/package.json')).toMatchSnapshot();
@@ -70,6 +72,26 @@ describe('new', () => {
       const { devDependencies } = readJson(tree, 'my-workspace/package.json');
       expect(devDependencies).toStrictEqual({
         '@nx/react': nxVersion,
+        '@nx/cypress': nxVersion,
+        '@nx/vite': nxVersion,
+        '@nx/workspace': nxVersion,
+        nx: nxVersion,
+      });
+    });
+
+    it('should generate necessary npm dependencies for vue preset', async () => {
+      await newGenerator(tree, {
+        ...defaultOptions,
+        name: 'my-workspace',
+        directory: 'my-workspace',
+        appName: 'app',
+        e2eTestRunner: 'cypress',
+        preset: Preset.VueMonorepo,
+      });
+
+      const { devDependencies } = readJson(tree, 'my-workspace/package.json');
+      expect(devDependencies).toStrictEqual({
+        '@nx/vue': nxVersion,
         '@nx/cypress': nxVersion,
         '@nx/vite': nxVersion,
         '@nx/workspace': nxVersion,

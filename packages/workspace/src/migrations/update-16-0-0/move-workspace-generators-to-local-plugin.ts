@@ -11,7 +11,6 @@ import {
   readProjectConfiguration,
   Tree,
   updateJson,
-  writeJson,
 } from '@nx/devkit';
 // nx-ignore-next-line
 import * as path from 'path';
@@ -23,6 +22,7 @@ import { moveGenerator } from '../../generators/move/move';
 import { nxVersion } from '../../utils/versions';
 import { PackageJson } from 'nx/src/utils/package-json';
 import { posix } from 'path';
+import { getNpmScope } from '../../utilities/get-import-path';
 
 const PROJECT_NAME = 'workspace-plugin';
 const DESTINATION = `tools/${PROJECT_NAME}`;
@@ -60,7 +60,7 @@ async function moveWorkspaceGeneratorsToLocalPlugin(tree: Tree) {
     );
     project = readProjectConfiguration(tree, PROJECT_NAME);
   }
-  await updateExistingPlugin(tree, project);
+  updateExistingPlugin(tree, project);
   return tasks;
 }
 
@@ -169,9 +169,9 @@ async function createNewPlugin(tree: Tree) {
     require('@nx/plugin/src/generators/plugin/plugin');
 
   // nx-ignore-next-line
-  const { Linter } = ensurePackage('@nx/linter', nxVersion);
+  const { Linter } = ensurePackage('@nx/eslint', nxVersion);
 
-  const { npmScope } = getWorkspaceLayout(tree);
+  const npmScope = getNpmScope(tree);
   const importPath = npmScope ? `@${npmScope}/${PROJECT_NAME}` : PROJECT_NAME;
 
   await pluginGenerator(tree, {
@@ -187,7 +187,7 @@ async function createNewPlugin(tree: Tree) {
     e2eTestRunner: 'none',
     publishable: false,
   });
-  getCreateGeneratorsJson()(
+  await getCreateGeneratorsJson()(
     tree,
     readProjectConfiguration(tree, PROJECT_NAME).root,
     PROJECT_NAME
@@ -207,8 +207,8 @@ function moveGeneratedPlugin(
       projectName: PROJECT_NAME,
       newProjectName: PROJECT_NAME,
       updateImportPath: true,
-      destinationRelativeToRoot: true,
       importPath: importPath,
+      projectNameAndRootFormat: 'as-provided',
     });
   }
 }

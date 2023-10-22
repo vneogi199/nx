@@ -122,7 +122,7 @@ When you run `nx run-many -t test -p app1 lib`, you are telling Nx to do the sam
 tasks `app1:test`
 and `lib:test`.
 
-When you run `nx run-many -t test --all`, you are telling Nx to do this for all the projects.
+When you run `nx run-many -t test`, you are telling Nx to do this for all the projects.
 
 As your workspace grows, retesting all projects becomes too slow. To address this Nx implements code change analysis to
 get the min set of projects that need to be retested. How does it work?
@@ -157,7 +157,7 @@ By default, the computation hash for say `nx test app1` includes:
 ![computation-hashing](/shared/mental-model/computation-hashing.svg)
 
 This behavior is customizable. For instance, lint checks may only depend on the source code of the project and global
-configs. Builds can depend on the dts files of the compiled libs instead of their source.
+configs. Builds can depend on the `.d.ts` files of the compiled libs instead of their source.
 
 After Nx computes the hash for a task, it then checks if it ran this exact computation before. First, it checks locally,
 and then if it is missing, and if a remote cache is configured, it checks remotely.

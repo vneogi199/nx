@@ -1,6 +1,6 @@
 import { E2eTestRunner, UnitTestRunner } from '../../../utils/test-runners';
 import type { Schema } from '../schema';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 
 export interface NormalizedSchema extends Schema {
   linter: Linter;
@@ -11,6 +11,4 @@ export interface NormalizedSchema extends Schema {
   e2eProjectName: string;
   e2eProjectRoot: string;
   parsedTags: string[];
-  ngCliSchematicAppRoot: string;
-  ngCliSchematicE2ERoot: string;
 }

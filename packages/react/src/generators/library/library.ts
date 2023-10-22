@@ -1,6 +1,5 @@
 import {
   addProjectConfiguration,
-  convertNxGenerator,
   ensurePackage,
   formatFiles,
   GeneratorCallback,
@@ -9,6 +8,7 @@ import {
   Tree,
   updateJson,
 } from '@nx/devkit';
+import { getRelativeCwd } from '@nx/devkit/src/generators/artifact-name-and-directory-utils';
 
 import { addTsConfigPath } from '@nx/js';
 
@@ -25,11 +25,19 @@ import { createFiles } from './lib/create-files';
 import { extractTsConfigBase } from '../../utils/create-ts-config';
 import { installCommonDependencies } from './lib/install-common-dependencies';
 import { setDefaults } from './lib/set-defaults';
+import { relative } from 'path';
 
 export async function libraryGenerator(host: Tree, schema: Schema) {
+  return await libraryGeneratorInternal(host, {
+    projectNameAndRootFormat: 'derived',
+    ...schema,
+  });
+}
+
+export async function libraryGeneratorInternal(host: Tree, schema: Schema) {
   const tasks: GeneratorCallback[] = [];
 
-  const options = normalizeOptions(host, schema);
+  const options = await normalizeOptions(host, schema);
   if (options.publishable === true && !schema.importPath) {
     throw new Error(
       `For publishable libs you have to provide a proper "--importPath" which needs to be a valid npm package name (e.g. my-awesome-lib or @myorg/my-lib)`
@@ -62,9 +70,8 @@ export async function libraryGenerator(host: Tree, schema: Schema) {
 
   // Set up build target
   if (options.buildable && options.bundler === 'vite') {
-    const { viteConfigurationGenerator } = ensurePackage<
-      typeof import('@nx/vite')
-    >('@nx/vite', nxVersion);
+    const { viteConfigurationGenerator, createOrEditViteConfig } =
+      ensurePackage<typeof import('@nx/vite')>('@nx/vite', nxVersion);
     const viteTask = await viteConfigurationGenerator(host, {
       uiFramework: 'react',
       project: options.name,
@@ -77,6 +84,27 @@ export async function libraryGenerator(host: Tree, schema: Schema) {
       testEnvironment: 'jsdom',
     });
     tasks.push(viteTask);
+    createOrEditViteConfig(
+      host,
+      {
+        project: options.name,
+        includeLib: true,
+        includeVitest: options.unitTestRunner === 'vitest',
+        inSourceTests: options.inSourceTests,
+        rollupOptionsExternal: [
+          "'react'",
+          "'react-dom'",
+          "'react/jsx-runtime'",
+        ],
+        imports: [
+          options.compiler === 'swc'
+            ? `import react from '@vitejs/plugin-react-swc'`
+            : `import react from '@vitejs/plugin-react'`,
+        ],
+        plugins: ['react()'],
+      },
+      false
+    );
   } else if (options.buildable && options.bundler === 'rollup') {
     const rollupTask = await addRollupBuildTarget(host, options);
     tasks.push(rollupTask);
@@ -84,12 +112,12 @@ export async function libraryGenerator(host: Tree, schema: Schema) {
 
   // Set up test target
   if (options.unitTestRunner === 'jest') {
-    const { jestProjectGenerator } = ensurePackage<typeof import('@nx/jest')>(
+    const { configurationGenerator } = ensurePackage<typeof import('@nx/jest')>(
       '@nx/jest',
       nxVersion
     );
 
-    const jestTask = await jestProjectGenerator(host, {
+    const jestTask = await configurationGenerator(host, {
       ...options,
       project: options.name,
       setupFile: 'none',
@@ -113,10 +141,9 @@ export async function libraryGenerator(host: Tree, schema: Schema) {
     options.unitTestRunner === 'vitest' &&
     options.bundler !== 'vite' // tests are already configured if bundler is vite
   ) {
-    const { vitestGenerator } = ensurePackage<typeof import('@nx/vite')>(
-      '@nx/vite',
-      nxVersion
-    );
+    const { vitestGenerator, createOrEditViteConfig } = ensurePackage<
+      typeof import('@nx/vite')
+    >('@nx/vite', nxVersion);
     const vitestTask = await vitestGenerator(host, {
       uiFramework: 'react',
       project: options.name,
@@ -126,11 +153,35 @@ export async function libraryGenerator(host: Tree, schema: Schema) {
       testEnvironment: 'jsdom',
     });
     tasks.push(vitestTask);
+    createOrEditViteConfig(
+      host,
+      {
+        project: options.name,
+        includeLib: true,
+        includeVitest: true,
+        inSourceTests: options.inSourceTests,
+        rollupOptionsExternal: [
+          "'react'",
+          "'react-dom'",
+          "'react/jsx-runtime'",
+        ],
+        imports: [`import react from '@vitejs/plugin-react'`],
+        plugins: ['react()'],
+      },
+      true
+    );
   }
 
   if (options.component) {
+    const relativeCwd = getRelativeCwd();
+    const name = joinPathFragments(
+      options.projectRoot,
+      'src/lib',
+      options.fileName
+    );
     const componentTask = await componentGenerator(host, {
-      name: options.fileName,
+      nameAndDirectoryFormat: 'as-provided',
+      name: relativeCwd ? relative(relativeCwd, name) : name,
       project: options.name,
       flat: true,
       style: options.style,
@@ -184,4 +235,3 @@ export async function libraryGenerator(host: Tree, schema: Schema) {
 }
 
 export default libraryGenerator;
-export const librarySchematic = convertNxGenerator(libraryGenerator);

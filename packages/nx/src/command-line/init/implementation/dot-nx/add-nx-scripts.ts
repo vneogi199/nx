@@ -52,12 +52,19 @@ export function writeMinimalNxJson(host: Tree, version: string) {
       version = execSync(`npm view nx@${version} version`).toString();
     }
     writeJson<NxJsonConfiguration>(host, 'nx.json', {
-      tasksRunnerOptions: {
-        default: {
-          runner: 'nx/tasks-runners/default',
-          options: {
-            cacheableOperations: [],
-          },
+      targetDefaults: {
+        build: {
+          cache: true,
+          dependsOn: ['^build'],
+        },
+        lint: {
+          cache: true,
+        },
+        test: {
+          cache: true,
+        },
+        e2e: {
+          cache: true,
         },
       },
       installation: {

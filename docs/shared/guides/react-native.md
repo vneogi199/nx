@@ -1,6 +1,6 @@
 # React Native with Nx
 
-Nx provides a holistic dev experience powered by an advanced CLI and editor plugins. It provides rich support for common tools like [Detox](/packages/detox), Storybook, Jest, and more.
+Nx provides a holistic dev experience powered by an advanced CLI and editor plugins. It provides rich support for common tools like [Detox](/nx-api/detox), Storybook, Jest, and more.
 
 In this guide we will show you how to develop [React Native](https://reactnative.dev/) applications with Nx.
 
@@ -146,7 +146,7 @@ yarn add @nx/react-native --dev
 To create additional React Native apps run:
 
 ```shell
-npx nx g @nx/react-native:app
+npx nx g @nx/react-native:app mobile --directory=apps/mobile
 ```
 
 ## Generating a Library
@@ -157,13 +157,13 @@ Nx allows you to create libraries with just one command. Some reasons you might 
 - Publish a package to be used outside the monorepo
 - Better visualize the architecture using `npx nx graph`
 
-For more information on Nx libraries, see our documentation on [Creating Libraries](/more-concepts/creating-libraries)
-and [Library Types](/more-concepts/library-types).
+For more information on Nx libraries, see our documentation on [Creating Libraries](/concepts/more-concepts/creating-libraries)
+and [Library Types](/concepts/more-concepts/library-types).
 
 To generate a new library run:
 
 ```shell
-npx nx g @nx/react-native:lib shared-ui-layout
+npx nx g @nx/react-native:lib shared-ui-layout --directory=libs/shared-ui-layout
 ```
 
 And you will see the following:
@@ -248,7 +248,7 @@ That's it! There is no need to build the library prior to using it. When you upd
 For libraries intended to be built and published to a registry (e.g. npm) you can use the `--publishable` and `--importPath` options.
 
 ```shell
-npx nx g @nx/react-native:lib shared-ui-layout --publishable --importPath=@happynrwl/ui-components
+npx nx g @nx/react-native:lib shared-ui-layout --directory=libs/shared-ui-layout --publishable --importPath=@happynrwl/ui-components
 npx nx g @nx/react-native:component layout --project=shared-ui-layout --export
 ```
 

@@ -27,8 +27,8 @@
     "url": "https://github.com/nrwl/nx/issues"
   },
   "homepage": "https://nx.dev",
-  "schematics": "./generators.json",
-  "builders": "./executors.json",
+  "generators": "./generators.json",
+  "executors": "./executors.json",
   "ng-update": {
     "requirements": {},
     "migrations": "./migrations.json"
@@ -38,7 +38,6 @@
     "@jest/test-result": "^29.4.1",
     "@phenomnomnominal/tsquery": "~5.0.1",
     "chalk": "^4.1.0",
-    "dotenv": "~10.0.0",
     "identity-obj-proxy": "3.0.0",
     "jest-config": "^29.4.1",
     "jest-resolve": "^29.4.1",

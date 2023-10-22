@@ -1,7 +1,7 @@
 import { installedCypressVersion } from '@nx/cypress/src/utils/cypress-version';
 import { readJson, readProjectConfiguration, Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 import { libraryGenerator } from '@nx/js';
 import { cypressProjectGenerator } from './cypress-project';
 
@@ -17,6 +17,7 @@ describe('@nx/storybook:cypress-project', () => {
     tree = createTreeWithEmptyWorkspace({ layout: 'apps-libs' });
     await libraryGenerator(tree, {
       name: 'test-ui-lib',
+      projectNameAndRootFormat: 'as-provided',
     });
   });
   afterEach(() => jest.clearAllMocks());

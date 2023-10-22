@@ -37,18 +37,25 @@ export type {
   HasherContext,
 } from './config/misc-interfaces';
 
+// TODO(v18): Remove this export
 /**
  * @category Workspace
  */
 export { Workspaces } from './config/workspaces';
 
-// TODO (v16): Change this to export from './config/configuration'
-export {
-  readAllWorkspaceConfiguration,
-  workspaceLayout,
-} from './project-graph/file-utils';
+export { workspaceLayout } from './config/configuration';
 
-export type { NxPlugin, ProjectTargetConfigurator } from './utils/nx-plugin';
+export type {
+  NxPlugin,
+  NxPluginV1,
+  NxPluginV2,
+  ProjectTargetConfigurator,
+  CreateNodes,
+  CreateNodesFunction,
+  CreateNodesContext,
+  CreateDependencies,
+  CreateDependenciesContext,
+} from './utils/nx-plugin';
 
 /**
  * @category Workspace
@@ -62,6 +69,8 @@ export type {
   ImplicitDependencyEntry,
   ImplicitJsonSubsetDependency,
   NxJsonConfiguration,
+  PluginConfiguration,
+  TargetDefaults,
   NxAffectedConfig,
 } from './config/nx-json';
 
@@ -112,14 +121,11 @@ export {
 /**
  * @category Generators
  */
-export {
-  readWorkspaceConfiguration,
-  updateWorkspaceConfiguration,
-  isStandaloneProject,
-  WorkspaceConfiguration,
-  getWorkspacePath,
-} from './generators/utils/deprecated';
+export { glob } from './generators/utils/glob';
 
+/**
+ * @category Generators
+ */
 export {
   readNxJson,
   updateNxJson,
@@ -130,6 +136,7 @@ export {
  */
 export type {
   ProjectFileMap,
+  FileMap,
   FileData,
   ProjectGraph,
   ProjectGraphDependency,
@@ -147,10 +154,17 @@ export { DependencyType } from './config/project-graph';
 /**
  * @category Project Graph
  */
-export { ProjectGraphBuilder } from './project-graph/project-graph-builder';
+export {
+  ProjectGraphBuilder,
+  RawProjectGraphDependency,
+  DynamicDependency,
+  ImplicitDependency,
+  StaticDependency,
+  validateDependency,
+} from './project-graph/project-graph-builder';
 
 /**
- * @category Utils
+ * @category Generators
  */
 export { readJson, writeJson, updateJson } from './generators/utils/json';
 
@@ -195,6 +209,7 @@ export { reverse } from './project-graph/operators';
 export {
   createProjectGraphAsync,
   readCachedProjectGraph,
+  readProjectsConfigurationFromProjectGraph,
 } from './project-graph/project-graph';
 
 /**

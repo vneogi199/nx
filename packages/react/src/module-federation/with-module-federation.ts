@@ -1,4 +1,4 @@
-import { ModuleFederationConfig } from '@nx/devkit/src/utils/module-federation';
+import { ModuleFederationConfig } from '@nx/webpack/src/utils/module-federation';
 import { getModuleFederationConfig } from './utils';
 import type { AsyncNxWebpackPlugin } from '@nx/webpack';
 import ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
@@ -17,13 +17,17 @@ export async function withModuleFederation(
     config.output.uniqueName = options.name;
     config.output.publicPath = 'auto';
 
+    if (options.library?.type === 'var') {
+      config.output.scriptType = 'text/javascript';
+    }
+
     config.optimization = {
       runtimeChunk: false,
     };
 
     config.experiments = {
       ...config.experiments,
-      outputModule: true,
+      outputModule: !(options.library?.type === 'var'),
     };
 
     config.plugins.push(
@@ -36,6 +40,13 @@ export async function withModuleFederation(
         shared: {
           ...sharedDependencies,
         },
+        /**
+         * remoteType: 'script' is required for the remote to be loaded as a script tag.
+         * remotes will need to be defined as:
+         *  { appX: 'appX@http://localhost:3001/remoteEntry.js' }
+         *  { appY: 'appY@http://localhost:3002/remoteEntry.js' }
+         */
+        ...(options.library?.type === 'var' ? { remoteType: 'script' } : {}),
       }),
       sharedLibraries.getReplacementPlugin()
     );

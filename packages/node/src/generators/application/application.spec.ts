@@ -24,8 +24,9 @@ describe('app', () => {
   describe('not nested', () => {
     it('should update project config', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         bundler: 'webpack',
+        projectNameAndRootFormat: 'as-provided',
       });
       const project = readProjectConfiguration(tree, 'my-node-app');
       expect(project.root).toEqual('my-node-app');
@@ -68,7 +69,7 @@ describe('app', () => {
         })
       );
       expect(project.targets.lint).toEqual({
-        executor: '@nx/linter:eslint',
+        executor: '@nx/eslint:lint',
         outputs: ['{options.outputFile}'],
         options: {
           lintFilePatterns: ['my-node-app/**/*.ts'],
@@ -81,8 +82,9 @@ describe('app', () => {
 
     it('should update tags', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         tags: 'one,two',
+        projectNameAndRootFormat: 'as-provided',
       });
       const projects = Object.fromEntries(getProjects(tree));
       expect(projects).toMatchObject({
@@ -94,7 +96,8 @@ describe('app', () => {
 
     it('should generate files', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
+        projectNameAndRootFormat: 'as-provided',
       });
       expect(tree.exists(`my-node-app/jest.config.ts`)).toBeTruthy();
       expect(tree.exists('my-node-app/src/main.ts')).toBeTruthy();
@@ -169,7 +172,8 @@ describe('app', () => {
       tree.rename('tsconfig.base.json', 'tsconfig.json');
 
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
+        projectNameAndRootFormat: 'as-provided',
       });
 
       const tsconfig = readJson(tree, 'my-node-app/tsconfig.json');
@@ -180,15 +184,16 @@ describe('app', () => {
   describe('nested', () => {
     it('should update project config', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
-        directory: 'myDir',
+        name: 'my-node-app',
+        directory: 'my-dir/my-node-app',
+        projectNameAndRootFormat: 'as-provided',
       });
-      const project = readProjectConfiguration(tree, 'my-dir-my-node-app');
+      const project = readProjectConfiguration(tree, 'my-node-app');
 
       expect(project.root).toEqual('my-dir/my-node-app');
 
       expect(project.targets.lint).toEqual({
-        executor: '@nx/linter:eslint',
+        executor: '@nx/eslint:lint',
         outputs: ['{options.outputFile}'],
         options: {
           lintFilePatterns: ['my-dir/my-node-app/**/*.ts'],
@@ -196,13 +201,13 @@ describe('app', () => {
       });
 
       expect(() =>
-        readProjectConfiguration(tree, 'my-dir-my-node-app-e2e')
-      ).toThrow(/Cannot find/);
+        readProjectConfiguration(tree, 'my-node-app-e2e')
+      ).not.toThrow();
     });
 
     it('should update tags', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         directory: 'myDir',
         tags: 'one,two',
       });
@@ -221,7 +226,7 @@ describe('app', () => {
         expect(lookupFn(config)).toEqual(expectedValue);
       };
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         directory: 'myDir',
       });
 
@@ -266,7 +271,7 @@ describe('app', () => {
   describe('--unit-test-runner none', () => {
     it('should not generate test configuration', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         unitTestRunner: 'none',
       });
       expect(tree.exists('jest.config.ts')).toBeFalsy();
@@ -278,7 +283,7 @@ describe('app', () => {
       expect(project.targets.test).toBeUndefined();
       expect(project.targets.lint).toMatchInlineSnapshot(`
         {
-          "executor": "@nx/linter:eslint",
+          "executor": "@nx/eslint:lint",
           "options": {
             "lintFilePatterns": [
               "my-node-app/**/*.ts",
@@ -297,7 +302,7 @@ describe('app', () => {
       await angularApplicationGenerator(tree, { name: 'my-frontend' });
 
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         frontendProject: 'my-frontend',
       });
 
@@ -332,7 +337,7 @@ describe('app', () => {
       await angularApplicationGenerator(tree, { name: 'myFrontend' });
 
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         frontendProject: 'myFrontend',
       });
 
@@ -346,7 +351,7 @@ describe('app', () => {
   describe('--swcJest', () => {
     it('should use @swc/jest for jest', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         tags: 'one,two',
         swcJest: true,
       } as Schema);
@@ -372,7 +377,7 @@ describe('app', () => {
   describe('--babelJest (deprecated)', () => {
     it('should use babel for jest', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         tags: 'one,two',
         babelJest: true,
       } as Schema);
@@ -398,7 +403,7 @@ describe('app', () => {
   describe('--js flag', () => {
     it('should generate js files instead of ts files', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         js: true,
       } as Schema);
 
@@ -424,7 +429,7 @@ describe('app', () => {
 
     it('should add project config', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         js: true,
       } as Schema);
       const project = readProjectConfiguration(tree, 'my-node-app');
@@ -435,7 +440,7 @@ describe('app', () => {
 
     it('should generate js files for nested libs as well', async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         directory: 'myDir',
         js: true,
       } as Schema);
@@ -447,7 +452,7 @@ describe('app', () => {
   describe('--pascalCaseFiles', () => {
     it(`should notify that this flag doesn't do anything`, async () => {
       await applicationGenerator(tree, {
-        name: 'myNodeApp',
+        name: 'my-node-app',
         pascalCaseFiles: true,
       } as Schema);
 
@@ -460,7 +465,7 @@ describe('app', () => {
     it('should format files by default', async () => {
       jest.spyOn(devkit, 'formatFiles');
 
-      await applicationGenerator(tree, { name: 'myNodeApp' });
+      await applicationGenerator(tree, { name: 'my-node-app' });
 
       expect(devkit.formatFiles).toHaveBeenCalled();
     });
@@ -468,7 +473,10 @@ describe('app', () => {
     it('should not format files when --skipFormat=true', async () => {
       jest.spyOn(devkit, 'formatFiles');
 
-      await applicationGenerator(tree, { name: 'myNodeApp', skipFormat: true });
+      await applicationGenerator(tree, {
+        name: 'my-node-app',
+        skipFormat: true,
+      });
 
       expect(devkit.formatFiles).not.toHaveBeenCalled();
     });

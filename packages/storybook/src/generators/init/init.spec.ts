@@ -6,7 +6,7 @@ import {
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 
-import { storybookVersion } from '../../utils/versions';
+import { nxVersion } from '../../utils/versions';
 import { initGenerator } from './init';
 
 describe('@nx/storybook:init', () => {
@@ -22,7 +22,7 @@ describe('@nx/storybook:init', () => {
       const existingVersion = '1.0.0';
       addDependenciesToPackageJson(
         tree,
-        { '@nx/storybook': storybookVersion, [existing]: existingVersion },
+        { '@nx/storybook': nxVersion, [existing]: existingVersion },
         { [existing]: existingVersion }
       );
       await initGenerator(tree, {
@@ -71,7 +71,7 @@ describe('@nx/storybook:init', () => {
       const existingVersion = '1.0.0';
       addDependenciesToPackageJson(
         tree,
-        { '@nx/storybook': storybookVersion, [existing]: existingVersion },
+        { '@nx/storybook': nxVersion, [existing]: existingVersion },
         { [existing]: existingVersion }
       );
       await initGenerator(tree, {
@@ -114,7 +114,7 @@ describe('@nx/storybook:init', () => {
       const existingVersion = '1.0.0';
       addDependenciesToPackageJson(
         tree,
-        { '@nx/storybook': storybookVersion, [existing]: existingVersion },
+        { '@nx/storybook': nxVersion, [existing]: existingVersion },
         { [existing]: existingVersion }
       );
       await initGenerator(tree, {
@@ -160,7 +160,7 @@ describe('@nx/storybook:init', () => {
       const existingVersion = '1.0.0';
       addDependenciesToPackageJson(
         tree,
-        { '@nx/storybook': storybookVersion, [existing]: existingVersion },
+        { '@nx/storybook': nxVersion, [existing]: existingVersion },
         { [existing]: existingVersion }
       );
       await initGenerator(tree, {
@@ -216,7 +216,7 @@ describe('@nx/storybook:init', () => {
       const existingVersion = '1.0.0';
       addDependenciesToPackageJson(
         tree,
-        { '@nx/storybook': storybookVersion, [existing]: existingVersion },
+        { '@nx/storybook': nxVersion, [existing]: existingVersion },
         { [existing]: existingVersion }
       );
       await initGenerator(tree, {
@@ -272,7 +272,7 @@ describe('@nx/storybook:init', () => {
       const existingVersion = '1.0.0';
       addDependenciesToPackageJson(
         tree,
-        { '@nx/storybook': storybookVersion, [existing]: existingVersion },
+        { '@nx/storybook': nxVersion, [existing]: existingVersion },
         { [existing]: existingVersion }
       );
       await initGenerator(tree, {
@@ -333,7 +333,7 @@ describe('@nx/storybook:init', () => {
       const existingVersion = '1.0.0';
       addDependenciesToPackageJson(
         tree,
-        { '@nx/storybook': storybookVersion, [existing]: existingVersion },
+        { '@nx/storybook': nxVersion, [existing]: existingVersion },
         { [existing]: existingVersion }
       );
       await initGenerator(tree, {
@@ -396,9 +396,7 @@ describe('@nx/storybook:init', () => {
         uiFramework: '@storybook/html-webpack5',
       });
       const nxJson = readJson<NxJsonConfiguration>(tree, 'nx.json');
-      expect(
-        nxJson.tasksRunnerOptions.default.options.cacheableOperations
-      ).toContain('build-storybook');
+      expect(nxJson.targetDefaults['build-storybook'].cache).toEqual(true);
     });
 
     it('should add build-storybook to cacheable operations for web-components', async () => {
@@ -406,9 +404,7 @@ describe('@nx/storybook:init', () => {
         uiFramework: '@storybook/web-components-webpack5',
       });
       const nxJson = readJson<NxJsonConfiguration>(tree, 'nx.json');
-      expect(
-        nxJson.tasksRunnerOptions.default.options.cacheableOperations
-      ).toContain('build-storybook');
+      expect(nxJson.targetDefaults['build-storybook'].cache).toEqual(true);
     });
 
     it('should add build-storybook to cacheable operations for vue', async () => {
@@ -416,9 +412,7 @@ describe('@nx/storybook:init', () => {
         uiFramework: '@storybook/vue-webpack5',
       });
       const nxJson = readJson<NxJsonConfiguration>(tree, 'nx.json');
-      expect(
-        nxJson.tasksRunnerOptions.default.options.cacheableOperations
-      ).toContain('build-storybook');
+      expect(nxJson.targetDefaults['build-storybook'].cache).toEqual(true);
     });
 
     it('should add build-storybook to cacheable operations for vue3', async () => {
@@ -426,9 +420,7 @@ describe('@nx/storybook:init', () => {
         uiFramework: '@storybook/vue3-webpack5',
       });
       const nxJson = readJson(tree, 'nx.json');
-      expect(
-        nxJson.tasksRunnerOptions.default.options.cacheableOperations
-      ).toContain('build-storybook');
+      expect(nxJson.targetDefaults['build-storybook'].cache).toEqual(true);
     });
 
     it('should not add any framework specific dependencies when no framework is specified', async () => {
@@ -443,6 +435,8 @@ describe('@nx/storybook:init', () => {
         '@nx/storybook',
         '@storybook/addon-essentials',
         '@storybook/core-server',
+        '@swc-node/register',
+        '@swc/core',
         'prettier',
         'typescript',
       ]);

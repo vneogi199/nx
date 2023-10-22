@@ -1,10 +1,8 @@
 import {
   readProjectConfiguration,
   names,
-  convertNxGenerator,
   generateFiles,
   updateJson,
-  getWorkspaceLayout,
   joinPathFragments,
   writeJson,
   readJson,
@@ -16,36 +14,30 @@ import type { Schema } from './schema';
 import * as path from 'path';
 import { PackageJson } from 'nx/src/utils/package-json';
 import pluginLintCheckGenerator from '../lint-checks/generator';
+import { nxVersion } from '../../utils/versions';
+import { determineArtifactNameAndDirectoryOptions } from '@nx/devkit/src/generators/artifact-name-and-directory-utils';
+import { relative } from 'path';
 
 interface NormalizedSchema extends Schema {
-  fileName: string;
   className: string;
   propertyName: string;
   projectRoot: string;
-  projectSourceRoot: string;
-  npmScope: string;
+  filePath: string;
+  directory: string;
 }
 
 function addFiles(host: Tree, options: NormalizedSchema) {
   generateFiles(
     host,
     path.join(__dirname, './files/executor'),
-    `${options.projectSourceRoot}/executors`,
+    options.directory,
     {
       ...options,
-      tmpl: '',
     }
   );
 
   if (options.unitTestRunner === 'none') {
-    host.delete(
-      joinPathFragments(
-        options.projectSourceRoot,
-        'executors',
-        options.fileName,
-        `executor.spec.ts`
-      )
-    );
+    host.delete(joinPathFragments(options.directory, `executor.spec.ts`));
   }
 }
 
@@ -53,22 +45,14 @@ function addHasherFiles(host: Tree, options: NormalizedSchema) {
   generateFiles(
     host,
     path.join(__dirname, './files/hasher'),
-    `${options.projectSourceRoot}/executors`,
+    options.directory,
     {
       ...options,
-      tmpl: '',
     }
   );
 
   if (options.unitTestRunner === 'none') {
-    host.delete(
-      joinPathFragments(
-        options.projectSourceRoot,
-        'executors',
-        options.fileName,
-        'hasher.spec.ts'
-      )
-    );
+    host.delete(joinPathFragments(options.directory, 'hasher.spec.ts'));
   }
 }
 
@@ -122,19 +106,38 @@ async function updateExecutorJson(host: Tree, options: NormalizedSchema) {
       options.skipLintChecks
     );
   }
+  // add dependencies
+  updateJson<PackageJson>(
+    host,
+    joinPathFragments(options.projectRoot, 'package.json'),
+    (json) => {
+      json.dependencies = {
+        '@nx/devkit': nxVersion,
+        ...json.dependencies,
+      };
+      return json;
+    }
+  );
 
   return updateJson(host, executorsPath, (json) => {
     let executors = json.executors ?? json.builders;
     executors ||= {};
     executors[options.name] = {
-      implementation: `./src/executors/${options.fileName}/executor`,
-      schema: `./src/executors/${options.fileName}/schema.json`,
+      implementation: `./${joinPathFragments(
+        relative(options.projectRoot, options.directory),
+        'executor'
+      )}`,
+      schema: `./${joinPathFragments(
+        relative(options.projectRoot, options.directory),
+        'schema.json'
+      )}`,
       description: options.description,
     };
     if (options.includeHasher) {
-      executors[
-        options.name
-      ].hasher = `./src/executors/${options.fileName}/hasher`;
+      executors[options.name].hasher = `./${joinPathFragments(
+        relative(options.projectRoot, options.directory),
+        'hasher'
+      )}`;
     }
     json.executors = executors;
 
@@ -142,12 +145,25 @@ async function updateExecutorJson(host: Tree, options: NormalizedSchema) {
   });
 }
 
-function normalizeOptions(host: Tree, options: Schema): NormalizedSchema {
-  const { npmScope } = getWorkspaceLayout(host);
-  const { fileName, className, propertyName } = names(options.name);
+async function normalizeOptions(
+  tree: Tree,
+  options: Schema
+): Promise<NormalizedSchema> {
+  const { project, artifactName, filePath, directory } =
+    await determineArtifactNameAndDirectoryOptions(tree, {
+      artifactType: 'executor',
+      callingGenerator: '@nx/plugin:executor',
+      name: options.name,
+      nameAndDirectoryFormat: options.nameAndDirectoryFormat,
+      project: options.project,
+      directory: options.directory,
+      fileName: 'executor',
+      derivedDirectory: 'executors',
+    });
 
-  const { root: projectRoot, sourceRoot: projectSourceRoot } =
-    readProjectConfiguration(host, options.project);
+  const { className, propertyName } = names(artifactName);
+
+  const { root: projectRoot } = readProjectConfiguration(tree, project);
 
   let description: string;
   if (options.description) {
@@ -158,18 +174,25 @@ function normalizeOptions(host: Tree, options: Schema): NormalizedSchema {
 
   return {
     ...options,
-    fileName,
+    filePath,
+    project,
+    directory,
     className,
     propertyName,
     description,
     projectRoot,
-    projectSourceRoot,
-    npmScope,
   };
 }
 
-export async function executorGenerator(host: Tree, schema: Schema) {
-  const options = normalizeOptions(host, schema);
+export async function executorGenerator(tree: Tree, rawOptions: Schema) {
+  await executorGeneratorInternal(tree, {
+    nameAndDirectoryFormat: 'derived',
+    ...rawOptions,
+  });
+}
+
+export async function executorGeneratorInternal(host: Tree, schema: Schema) {
+  const options = await normalizeOptions(host, schema);
 
   addFiles(host, options);
   if (options.includeHasher) {
@@ -184,4 +207,3 @@ export async function executorGenerator(host: Tree, schema: Schema) {
 }
 
 export default executorGenerator;
-export const executorSchematic = convertNxGenerator(executorGenerator);

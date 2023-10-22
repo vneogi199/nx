@@ -28,9 +28,10 @@ import {
   RunCmdOpts,
   runCommand,
 } from './command-utils';
-import { output } from '@nx/devkit';
+import { NxJsonConfiguration, output } from '@nx/devkit';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { resetWorkspaceContext } from 'nx/src/utils/workspace-context';
 
 let projName: string;
 
@@ -41,15 +42,24 @@ let projName: string;
 export function newProject({
   name = uniq('proj'),
   packageManager = getSelectedPackageManager(),
+  unsetProjectNameAndRootFormat = true,
 } = {}): string {
   try {
     const projScope = 'proj';
 
     if (!directoryExists(tmpBackupProjPath())) {
       runCreateWorkspace(projScope, {
-        preset: 'empty',
+        preset: 'apps',
         packageManager,
       });
+
+      if (unsetProjectNameAndRootFormat) {
+        console.warn(
+          'ATTENTION: The workspace generated for this e2e test does not use the new as-provided project name/root format. Please update this test'
+        );
+        createFile('apps/.gitkeep');
+        createFile('libs/.gitkeep');
+      }
 
       // Temporary hack to prevent installing with `--frozen-lockfile`
       if (isCI && packageManager === 'pnpm') {
@@ -67,14 +77,17 @@ export function newProject({
         `@nx/esbuild`,
         `@nx/jest`,
         `@nx/js`,
-        `@nx/linter`,
+        `@nx/eslint`,
         `@nx/nest`,
         `@nx/next`,
         `@nx/node`,
+        `@nx/nuxt`,
         `@nx/plugin`,
+        `@nx/playwright`,
         `@nx/rollup`,
         `@nx/react`,
         `@nx/storybook`,
+        `@nx/vue`,
         `@nx/vite`,
         `@nx/web`,
         `@nx/webpack`,
@@ -137,6 +150,7 @@ export function runCreateWorkspace(
     standaloneApi,
     docker,
     nextAppDir,
+    e2eTestRunner,
   }: {
     preset: string;
     appName?: string;
@@ -152,6 +166,7 @@ export function runCreateWorkspace(
     routing?: boolean;
     docker?: boolean;
     nextAppDir?: boolean;
+    e2eTestRunner?: 'cypress' | 'playwright' | 'jest' | 'detox' | 'none';
   }
 ) {
   projName = name;
@@ -197,15 +212,27 @@ export function runCreateWorkspace(
     command += ` --package-manager=${packageManager}`;
   }
 
+  if (e2eTestRunner) {
+    command += ` --e2eTestRunner=${e2eTestRunner}`;
+  }
+
   if (extraArgs) {
     command += ` ${extraArgs}`;
+  }
+
+  if (isCI) {
+    command += ` --verbose`;
   }
 
   try {
     const create = execSync(`${command}${isVerbose() ? ' --verbose' : ''}`, {
       cwd,
       stdio: 'pipe',
-      env: { CI: 'true', ...process.env },
+      env: {
+        CI: 'true',
+        NX_VERBOSE_LOGGING: isCI ? 'true' : 'false',
+        ...process.env,
+      },
       encoding: 'utf-8',
     });
 
@@ -538,4 +565,5 @@ export function cleanupProject({
       removeSync(tmpProjPath());
     } catch {}
   }
+  resetWorkspaceContext();
 }

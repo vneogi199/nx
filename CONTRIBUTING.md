@@ -76,13 +76,13 @@ Check out [this video for a live walkthrough](https://youtu.be/Tx257WpNsxc) or f
 - Run `pnpm local-registry` in Terminal 1 (keep it running)
 - Run `npm adduser --registry http://localhost:4873` in Terminal 2 (real credentials are not required, you just need to
   be logged in. You can use test/test/test@test.io.)
-- Run `pnpm nx-release 16.0.0 --local` in Terminal 2 - you can choose any nonexistent version number here, but it's recommended to use the next major
+- Run `pnpm nx-release 17.0.0 --local` in Terminal 2 - you can choose any nonexistent version number here, but it's recommended to use the next major
 - Run `cd ./tmp` in Terminal 2
 - Run `npx create-nx-workspace@17.0.0` in Terminal 2
 
 If you have problems publishing, make sure you use Node 18 and NPM 8.
 
-**NOTE:** To use this newly published local version, you need to make a new workspace or change all of your target packages to this new version, eg: `"nx": "^16.0.0",` and re-run `pnpm i` in your testing project.
+**NOTE:** To use this newly published local version, you need to make a new workspace or change all of your target packages to this new version, eg: `"nx": "^17.0.0",` and re-run `pnpm i` in your testing project.
 
 ### Publishing for Yarn 2+ (Berry)
 
@@ -112,9 +112,7 @@ Yarn Berry operates slightly differently than Yarn Classic. In order to publish 
     - localhost
   ```
 
-- Run `pnpm nx-release --local` in Terminal 2 to publish next minor version. If this version already exists, you can
-  bump the minor version in `lerna.json` to toggle the next minor. The output will report the version of published
-  packages.
+- Run `pnpm nx-release minor --local` in Terminal 2 to publish next minor version. The output will report the version of published packages.
 - Go to your target folder (e.g. `cd ./tmp`) in Terminal 2
 - Run `yarn dlx create-nx-workspace@123.4.5` in Terminal 2 (replace `123.4.5` with the version that got published).
 
@@ -179,6 +177,8 @@ The `docs/map.json` file is considered our source of truth for our site's struct
 new page to our documentation to ensure that it is included in the documentation site. We also run automated scripts
 based on this `map.json` data to safeguard against common human errors that could break our site.
 
+When you make a change to the `map.json` file, make sure to run `pnpm documentation` to propagate your changes to the `nx-dev` application.
+
 #### Nx-Dev Application
 
 Our public `nx.dev` documentation site is a [Next.js](https://nextjs.org/) application, that can be found in
@@ -211,10 +211,10 @@ adjusting the docs.
 To run `nx-dev` locally, run the command:
 
 ```bash
-npx nx serve nx-dev
+npx nx serve-docs nx-dev
 ```
 
-You can then access the application locally at `localhost:4200`.
+You can then access the application locally at `localhost:4200`. Changes to markdown documentation files will be automatically applied to the site when you refresh the browser.
 
 #### Troubleshooting: `JavaScript heap out of memory`
 
@@ -327,6 +327,7 @@ The scope must be one of the following:
 - storybook - anything Storybook specific
 - testing - anything testing specific (e.g., Jest or Cypress)
 - vite - anything Vite specific
+- vue - anything Vue specific
 - web - anything Web specific
 - webpack - anything Webpack specific
 - misc - misc stuff
@@ -343,7 +344,7 @@ Including the issue number that the PR relates to also helps with tracking.
 ```plain
 feat(angular): add an option to generate lazy-loadable modules
 
-`nx generate lib mylib --lazy` provisions the mylib project in tslint.json
+`nx generate lib mylib --lazy` provisions the mylib project in .eslintrc.json
 
 Closes #157
 ```

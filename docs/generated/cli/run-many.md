@@ -68,7 +68,7 @@ Test all projects with a `type:feature` or `type:ui` tag:
 Run lint, test, and build targets for all projects. Requires Nx v15.4+:
 
 ```shell
- nx run-many --targets=lint,test,build --all
+ nx run-many --targets=lint,test,build
 ```
 
 ## Options
@@ -79,7 +79,15 @@ Type: `boolean`
 
 Default: `true`
 
-[deprecated] Run the target on all projects in the workspace
+[deprecated] `run-many` runs all targets on all projects in the workspace if no projects are provided. This option is no longer required.
+
+### batch
+
+Type: `boolean`
+
+Default: `false`
+
+Run task(s) in batches for executors which support batches
 
 ### configuration
 
@@ -105,7 +113,7 @@ Type: `boolean`
 
 Show help
 
-### nx-bail
+### nxBail
 
 Type: `boolean`
 
@@ -113,7 +121,7 @@ Default: `false`
 
 Stop command execution after the first failed task
 
-### nx-ignore-cycles
+### nxIgnoreCycles
 
 Type: `boolean`
 
@@ -147,7 +155,7 @@ Type: `string`
 
 This is the name of the tasks runner configured in nx.json
 
-### skip-nx-cache
+### skipNxCache
 
 Type: `boolean`
 

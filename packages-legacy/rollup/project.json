@@ -5,6 +5,7 @@
   "projectType": "library",
   "targets": {
     "build": {
+      "outputs": ["{workspaceRoot}/build/packages/{projectName}/README.md"],
       "command": "node ./scripts/copy-readme.js rollup-legacy"
     },
     "build-base": {
@@ -14,7 +15,6 @@
         "main": "packages-legacy/rollup/index.ts",
         "tsConfig": "packages-legacy/rollup/tsconfig.json",
         "outputPath": "build/packages/rollup-legacy",
-        "updateBuildableProjectDepsInPackageJson": false,
         "assets": [
           {
             "input": "packages-legacy/rollup",

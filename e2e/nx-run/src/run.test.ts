@@ -4,33 +4,41 @@ import {
   fileExists,
   isWindows,
   newProject,
-  readFile,
   readJson,
-  readProjectConfig,
   removeFile,
   runCLI,
   runCLIAsync,
   runCommand,
+  setMaxWorkers,
   tmpProjPath,
   uniq,
   updateFile,
   updateJson,
-  updateProjectConfig,
 } from '@nx/e2e/utils';
 import { PackageJson } from 'nx/src/utils/package-json';
 import * as path from 'path';
+import { join } from 'path';
 
 describe('Nx Running Tests', () => {
   let proj: string;
   beforeAll(() => (proj = newProject()));
   afterAll(() => cleanupProject());
 
+  // Ensures that nx.json is restored to its original state after each test
+  let existingNxJson;
+  beforeEach(() => {
+    existingNxJson = readJson('nx.json');
+  });
+  afterEach(() => {
+    updateFile('nx.json', JSON.stringify(existingNxJson, null, 2));
+  });
+
   describe('running targets', () => {
     describe('(forwarding params)', () => {
       let proj = uniq('proj');
       beforeAll(() => {
         runCLI(`generate @nx/js:lib ${proj}`);
-        updateProjectConfig(proj, (c) => {
+        updateJson(`libs/${proj}/project.json`, (c) => {
           c.targets['echo'] = {
             command: 'echo ECHO:',
           };
@@ -54,10 +62,10 @@ describe('Nx Running Tests', () => {
       });
     });
 
-    it('should execute long running tasks', async () => {
+    it('should execute long running tasks', () => {
       const myapp = uniq('myapp');
       runCLI(`generate @nx/web:app ${myapp}`);
-      updateProjectConfig(myapp, (c) => {
+      updateJson(`apps/${myapp}/project.json`, (c) => {
         c.targets['counter'] = {
           executor: '@nx/workspace:counter',
           options: {
@@ -79,8 +87,8 @@ describe('Nx Running Tests', () => {
       runCLI(`generate @nx/node:lib ${mylib}`);
 
       // Used to restore targets to lib after test
-      const original = readProjectConfig(mylib);
-      updateProjectConfig(mylib, (j) => {
+      const original = readJson(`libs/${mylib}/project.json`);
+      updateJson(`libs/${mylib}/project.json`, (j) => {
         delete j.targets;
         return j;
       });
@@ -113,8 +121,76 @@ describe('Nx Running Tests', () => {
         `Cannot find configuration for task ${mylib}:echo:fail`
       );
 
-      updateProjectConfig(mylib, (c) => original);
+      updateJson(`libs/${mylib}/project.json`, (c) => original);
     }, 1000000);
+
+    describe('tokens support', () => {
+      let app: string;
+
+      beforeAll(async () => {
+        app = uniq('myapp');
+        runCLI(`generate @nx/web:app ${app}`);
+        setMaxWorkers(join('apps', app, 'project.json'));
+      });
+
+      it('should support using {projectRoot} in options blocks in project.json', async () => {
+        updateJson(`apps/${app}/project.json`, (c) => {
+          c.targets['echo'] = {
+            command: `node -e 'console.log("{projectRoot}")'`,
+          };
+          return c;
+        });
+
+        const output = runCLI(`echo ${app}`);
+        expect(output).toContain(`apps/${app}`);
+      });
+
+      it('should support using {projectName} in options blocks in project.json', () => {
+        updateJson(`apps/${app}/project.json`, (c) => {
+          c.targets['echo'] = {
+            command: `node -e 'console.log("{projectName}")'`,
+          };
+          return c;
+        });
+
+        const output = runCLI(`echo ${app}`);
+        expect(output).toContain(app);
+      });
+
+      it('should support using {projectRoot} in targetDefaults', async () => {
+        updateJson(`nx.json`, (json) => {
+          json.targetDefaults = {
+            echo: {
+              command: `node -e 'console.log("{projectRoot}")'`,
+            },
+          };
+          return json;
+        });
+        updateJson(`apps/${app}/project.json`, (c) => {
+          c.targets['echo'] = {};
+          return c;
+        });
+        const output = runCLI(`echo ${app}`);
+        expect(output).toContain(`apps/${app}`);
+      });
+
+      it('should support using {projectName} in targetDefaults', () => {
+        updateJson(`nx.json`, (json) => {
+          json.targetDefaults = {
+            echo: {
+              command: `node -e 'console.log("{projectName}")'`,
+            },
+          };
+          return json;
+        });
+        updateJson(`apps/${app}/project.json`, (c) => {
+          c.targets['echo'] = {};
+          return c;
+        });
+        const output = runCLI(`echo ${app}`);
+        expect(output).toContain(app);
+      });
+    });
   });
 
   describe('Nx Bail', () => {
@@ -123,13 +199,13 @@ describe('Nx Running Tests', () => {
       const myapp2 = uniq('b');
       runCLI(`generate @nx/web:app ${myapp1}`);
       runCLI(`generate @nx/web:app ${myapp2}`);
-      updateProjectConfig(myapp1, (c) => {
+      updateJson(`apps/${myapp1}/project.json`, (c) => {
         c.targets['error'] = {
           command: 'echo boom1 && exit 1',
         };
         return c;
       });
-      updateProjectConfig(myapp2, (c) => {
+      updateJson(`apps/${myapp2}/project.json`, (c) => {
         c.targets['error'] = {
           executor: 'nx:run-commands',
           options: {
@@ -139,7 +215,7 @@ describe('Nx Running Tests', () => {
         return c;
       });
 
-      let withoutBail = runCLI(`run-many --target=error --all --parallel=1`, {
+      let withoutBail = runCLI(`run-many --target=error --parallel=1`, {
         silenceError: true,
       })
         .split('\n')
@@ -150,12 +226,9 @@ describe('Nx Running Tests', () => {
       expect(withoutBail).toContain(`- ${myapp1}:error`);
       expect(withoutBail).toContain(`- ${myapp2}:error`);
 
-      let withBail = runCLI(
-        `run-many --target=error --all --parallel=1 --nx-bail`,
-        {
-          silenceError: true,
-        }
-      )
+      let withBail = runCLI(`run-many --target=error --parallel=1 --nx-bail`, {
+        silenceError: true,
+      })
         .split('\n')
         .map((r) => r.trim())
         .filter((r) => r);
@@ -189,6 +262,7 @@ describe('Nx Running Tests', () => {
       const myapp = uniq('app');
       const target = uniq('script');
       const expectedOutput = uniq('myEchoedString');
+      const expectedEnvOutput = uniq('myEnvString');
 
       runCLI(`generate @nx/web:app ${myapp}`);
       updateFile(
@@ -196,12 +270,30 @@ describe('Nx Running Tests', () => {
         JSON.stringify({
           name: myapp,
           scripts: {
-            [target]: `echo ${expectedOutput}`,
+            [target]: `echo ${expectedOutput} $ENV_VAR`,
+          },
+          nx: {
+            targets: {
+              [target]: {
+                configurations: {
+                  production: {},
+                },
+              },
+            },
           },
         })
       );
 
+      updateFile(
+        `apps/${myapp}/.env.production`,
+        `ENV_VAR=${expectedEnvOutput}`
+      );
+
       expect(runCLI(`${target} ${myapp}`)).toContain(expectedOutput);
+      expect(runCLI(`${target} ${myapp}`)).not.toContain(expectedEnvOutput);
+      expect(runCLI(`${target} ${myapp} --configuration production`)).toContain(
+        expectedEnvOutput
+      );
     }, 10000);
 
     it('should run targets inferred from plugin-specified project files', () => {
@@ -345,9 +437,9 @@ describe('Nx Running Tests', () => {
         );
       });
 
-      it('should be able to include deps using dependsOn', () => {
-        const originalWorkspace = readProjectConfig(myapp);
-        updateProjectConfig(myapp, (config) => {
+      it('should be able to include deps using dependsOn', async () => {
+        const originalWorkspace = readJson(`apps/${myapp}/project.json`);
+        updateJson(`apps/${myapp}/project.json`, (config) => {
           config.targets.prep = {
             executor: 'nx:run-commands',
             options: {
@@ -367,12 +459,12 @@ describe('Nx Running Tests', () => {
         expect(output).toContain(mylib2);
         expect(output).toContain('PREP');
 
-        updateProjectConfig(myapp, () => originalWorkspace);
+        updateJson(`apps/${myapp}/project.json`, () => originalWorkspace);
       }, 10000);
 
-      it('should be able to include deps using target defaults defined at the root', () => {
+      it('should be able to include deps using target defaults defined at the root', async () => {
         const nxJson = readJson('nx.json');
-        updateProjectConfig(myapp, (config) => {
+        updateJson(`apps/${myapp}/project.json`, (config) => {
           config.targets.prep = {
             command: 'echo PREP > one.txt',
           };
@@ -382,16 +474,14 @@ describe('Nx Running Tests', () => {
           return config;
         });
 
-        nxJson.tasksRunnerOptions.default.options.cacheableOperations = [
-          'prep',
-          'outside',
-        ];
         nxJson.targetDefaults = {
           prep: {
             outputs: ['{workspaceRoot}/one.txt'],
+            cache: true,
           },
           outside: {
             dependsOn: ['prep'],
+            cache: true,
           },
         };
         updateFile('nx.json', JSON.stringify(nxJson));

@@ -1,3 +1,4 @@
+import * as ts from 'typescript';
 import { ExecutorContext } from '@nx/devkit';
 import type { TypeScriptCompilationOptions } from '@nx/workspace/src/utilities/typescript/compilation';
 import { CopyAssetsHandler } from '../../utils/assets/copy-assets-handler';
@@ -16,6 +17,24 @@ import { ExecutorOptions, NormalizedExecutorOptions } from '../../utils/schema';
 import { compileTypeScriptFiles } from '../../utils/typescript/compile-typescript-files';
 import { watchForSingleFileChanges } from '../../utils/watch-for-single-file-changes';
 import { getCustomTrasformersFactory, normalizeOptions } from './lib';
+import { readTsConfig } from '../../utils/typescript/ts-config';
+import { createEntryPoints } from '../../utils/package-json/create-entry-points';
+
+export function determineModuleFormatFromTsConfig(
+  absolutePathToTsConfig: string
+): 'cjs' | 'esm' {
+  const tsConfig = readTsConfig(absolutePathToTsConfig);
+  if (
+    tsConfig.options.module === ts.ModuleKind.ES2015 ||
+    tsConfig.options.module === ts.ModuleKind.ES2020 ||
+    tsConfig.options.module === ts.ModuleKind.ES2022 ||
+    tsConfig.options.module === ts.ModuleKind.ESNext
+  ) {
+    return 'esm';
+  } else {
+    return 'cjs';
+  }
+}
 
 export function createTypeScriptCompilationOptions(
   normalizedOptions: NormalizedExecutorOptions,
@@ -45,7 +64,7 @@ export async function* tscExecutor(
 
   const { projectRoot, tmpTsConfig, target, dependencies } = checkDependencies(
     context,
-    _options.tsConfig
+    options.tsConfig
   );
 
   if (tmpTsConfig) {
@@ -90,7 +109,22 @@ export async function* tscExecutor(
     tsCompilationOptions,
     async () => {
       await assetHandler.processAllAssetsOnce();
-      updatePackageJson(options, context, target, dependencies);
+      updatePackageJson(
+        {
+          ...options,
+          additionalEntryPoints: createEntryPoints(
+            options.additionalEntryPoints,
+            context.root
+          ),
+          format: [determineModuleFormatFromTsConfig(options.tsConfig)],
+          // As long as d.ts files match their .js counterparts, we don't need to emit them.
+          // TSC can match them correctly based on file names.
+          skipTypings: true,
+        },
+        context,
+        target,
+        dependencies
+      );
       postProcessInlinedDependencies(
         tsCompilationOptions.outputPath,
         tsCompilationOptions.projectRoot,
@@ -106,7 +140,23 @@ export async function* tscExecutor(
       context.projectName,
       options.projectRoot,
       'package.json',
-      () => updatePackageJson(options, context, target, dependencies)
+      () =>
+        updatePackageJson(
+          {
+            ...options,
+            additionalEntryPoints: createEntryPoints(
+              options.additionalEntryPoints,
+              context.root
+            ),
+            // As long as d.ts files match their .js counterparts, we don't need to emit them.
+            // TSC can match them correctly based on file names.
+            skipTypings: true,
+            format: [determineModuleFormatFromTsConfig(options.tsConfig)],
+          },
+          context,
+          target,
+          dependencies
+        )
     );
     const handleTermination = async (exitCode: number) => {
       await typescriptCompilation.close();

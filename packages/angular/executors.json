@@ -14,24 +14,14 @@
       "implementation": "./src/executors/package/package.impl",
       "schema": "./src/executors/package/schema.json",
       "description": "Builds and packages an Angular library producing an output following the Angular Package Format (APF) to be distributed as an NPM package.\nThis executor is similar to the `@angular-devkit/build-angular:ng-packagr` with additional support for incremental builds."
+    },
+    "browser-esbuild": {
+      "implementation": "./src/executors/browser-esbuild/browser-esbuild.impl",
+      "schema": "./src/executors/browser-esbuild/schema.json",
+      "description": "Builds your application with esbuild and adds support for incremental builds."
     }
   },
   "builders": {
-    "delegate-build": {
-      "implementation": "./src/executors/delegate-build/compat",
-      "schema": "./src/executors/delegate-build/schema.json",
-      "description": "Delegates the build to a different target while supporting incremental builds."
-    },
-    "ng-packagr-lite": {
-      "implementation": "./src/executors/ng-packagr-lite/compat",
-      "schema": "./src/executors/ng-packagr-lite/schema.json",
-      "description": "Builds a library with support for incremental builds.\nThis executor is meant to be used with buildable libraries in an incremental build scenario. It is similar to the `@nrwl/angular:package` executor but with some key differences:\n- It doesn't run `ngcc` automatically (`ngcc` needs to be run separately beforehand if needed, this can be done in a `postinstall` hook on `package.json`)\n- It only produces ESM2020 bundles\n- It doesn't generate package exports in the `package.json`"
-    },
-    "package": {
-      "implementation": "./src/executors/package/compat",
-      "schema": "./src/executors/package/schema.json",
-      "description": "Builds and packages an Angular library to be distributed as an NPM package. It supports incremental builds."
-    },
     "webpack-browser": {
       "implementation": "./src/builders/webpack-browser/webpack-browser.impl",
       "schema": "./src/builders/webpack-browser/schema.json",

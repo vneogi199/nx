@@ -6,8 +6,9 @@ import {
   runCommand,
   uniq,
   updateFile,
-  updateProjectConfig,
+  updateJson,
 } from '@nx/e2e/utils';
+import { join } from 'path';
 
 describe('Webpack Plugin', () => {
   beforeEach(() => newProject());
@@ -19,7 +20,7 @@ describe('Webpack Plugin', () => {
     updateFile(`libs/${myPkg}/src/index.ts`, `console.log('Hello');\n`);
 
     runCLI(
-      `generate @nx/webpack:webpack-project ${myPkg} --target=node --tsConfig=libs/${myPkg}/tsconfig.lib.json --main=libs/${myPkg}/src/index.ts`
+      `generate @nx/webpack:configuration ${myPkg} --target=node --tsConfig=libs/${myPkg}/tsconfig.lib.json --main=libs/${myPkg}/src/index.ts`
     );
 
     // Test `scriptType` later during during.
@@ -45,28 +46,28 @@ module.exports = composePlugins(withNx(), (config) => {
     expect(output).not.toMatch(/Conflicting/);
     expect(output).not.toMatch(/process.env.NODE_ENV/);
 
-    updateProjectConfig(myPkg, (config) => {
+    updateJson(join('libs', myPkg, 'project.json'), (config) => {
       delete config.targets.build;
       return config;
     });
 
     // swc
     runCLI(
-      `generate @nx/webpack:webpack-project ${myPkg} --target=node --tsConfig=libs/${myPkg}/tsconfig.lib.json --main=libs/${myPkg}/src/index.ts --compiler=swc`
+      `generate @nx/webpack:configuration ${myPkg} --target=node --tsConfig=libs/${myPkg}/tsconfig.lib.json --main=libs/${myPkg}/src/index.ts --compiler=swc`
     );
     rmDist();
     runCLI(`build ${myPkg}`);
     output = runCommand(`node dist/libs/${myPkg}/main.js`);
     expect(output).toMatch(/Hello/);
 
-    updateProjectConfig(myPkg, (config) => {
+    updateJson(join('libs', myPkg, 'project.json'), (config) => {
       delete config.targets.build;
       return config;
     });
 
     // tsc
     runCLI(
-      `generate @nx/webpack:webpack-project ${myPkg} --target=node --tsConfig=libs/${myPkg}/tsconfig.lib.json --main=libs/${myPkg}/src/index.ts --compiler=tsc`
+      `generate @nx/webpack:configuration ${myPkg} --target=node --tsConfig=libs/${myPkg}/tsconfig.lib.json --main=libs/${myPkg}/src/index.ts --compiler=tsc`
     );
     rmDist();
     runCLI(`build ${myPkg}`);
@@ -80,7 +81,7 @@ module.exports = composePlugins(withNx(), (config) => {
     updateFile(`libs/${myPkg}/src/index.ts`, `console.log('Hello');\n`);
 
     runCLI(
-      `generate @nx/webpack:webpack-project ${myPkg} --target=node --compiler=babel --tsConfig=libs/${myPkg}/tsconfig.lib.json --main=libs/${myPkg}/src/index.ts`
+      `generate @nx/webpack:configuration ${myPkg} --target=node --compiler=babel --tsConfig=libs/${myPkg}/tsconfig.lib.json --main=libs/${myPkg}/src/index.ts`
     );
 
     updateFile(

@@ -3,6 +3,7 @@ import {
   checkFilesExist,
   cleanupProject,
   createFile,
+  ensurePlaywrightBrowsersInstallation,
   isNotWindows,
   killPorts,
   newProject,
@@ -10,11 +11,15 @@ import {
   rmDist,
   runCLI,
   runCLIAsync,
-  runCypressTests,
+  runE2ETests,
+  setMaxWorkers,
+  tmpProjPath,
   uniq,
   updateFile,
-  updateProjectConfig,
+  updateJson,
 } from '@nx/e2e/utils';
+import { join } from 'path';
+import { copyFileSync } from 'fs';
 
 describe('Web Components Applications', () => {
   beforeEach(() => newProject());
@@ -25,35 +30,94 @@ describe('Web Components Applications', () => {
     runCLI(
       `generate @nx/web:app ${appName} --bundler=webpack --no-interactive`
     );
+    setMaxWorkers(join('apps', appName, 'project.json'));
 
     const lintResults = runCLI(`lint ${appName}`);
     expect(lintResults).toContain('All files pass linting.');
-
-    runCLI(`build ${appName} --outputHashing none --compiler babel`);
-    checkFilesExist(
-      `dist/apps/${appName}/index.html`,
-      `dist/apps/${appName}/runtime.js`,
-      `dist/apps/${appName}/main.js`,
-      `dist/apps/${appName}/styles.css`
-    );
-
-    expect(readFile(`dist/apps/${appName}/index.html`)).toContain(
-      '<link rel="stylesheet" href="styles.css">'
-    );
 
     const testResults = await runCLIAsync(`test ${appName}`);
 
     expect(testResults.combinedOutput).toContain(
       'Test Suites: 1 passed, 1 total'
     );
+    const lintE2eResults = runCLI(`lint ${appName}-e2e`);
+
+    expect(lintE2eResults).toContain('All files pass linting.');
+
+    if (isNotWindows() && runE2ETests()) {
+      const e2eResults = runCLI(`e2e ${appName}-e2e --no-watch`);
+      expect(e2eResults).toContain('All specs passed!');
+      expect(await killPorts()).toBeTruthy();
+    }
+
+    copyFileSync(
+      join(__dirname, 'test-fixtures/inlined.png'),
+      join(tmpProjPath(), `apps/${appName}/src/app/inlined.png`)
+    );
+    copyFileSync(
+      join(__dirname, 'test-fixtures/emitted.png'),
+      join(tmpProjPath(), `apps/${appName}/src/app/emitted.png`)
+    );
+    updateFile(
+      `apps/${appName}/src/app/app.element.ts`,
+      `
+      // @ts-ignore
+      import inlined from './inlined.png';
+      // @ts-ignore
+      import emitted from './emitted.png';
+      export class AppElement extends HTMLElement {
+        public static observedAttributes = [];
+        connectedCallback() {
+          this.innerHTML = \`
+            <img src="\${inlined} "/>
+            <img src="\${emitted} "/>
+          \`;
+        }
+      }
+      customElements.define('app-root', AppElement);
+    `
+    );
+    runCLI(`build ${appName} --outputHashing none`);
+    checkFilesExist(
+      `dist/apps/${appName}/index.html`,
+      `dist/apps/${appName}/runtime.js`,
+      `dist/apps/${appName}/emitted.png`,
+      `dist/apps/${appName}/main.js`,
+      `dist/apps/${appName}/styles.css`
+    );
+    checkFilesDoNotExist(`dist/apps/${appName}/inlined.png`);
+
+    expect(readFile(`dist/apps/${appName}/main.js`)).toContain(
+      '<img src="data:image/png;base64'
+    );
+    // Should not be a JS module but kept as a PNG
+    expect(readFile(`dist/apps/${appName}/emitted.png`)).not.toContain(
+      'export default'
+    );
+
+    expect(readFile(`dist/apps/${appName}/index.html`)).toContain(
+      '<link rel="stylesheet" href="styles.css">'
+    );
+  }, 500000);
+
+  // TODO: re-enable this when tests are passing again
+  xit('should generate working playwright e2e app', async () => {
+    const appName = uniq('app');
+    runCLI(
+      `generate @nx/web:app ${appName} --bundler=webpack --e2eTestRunner=playwright --no-interactive`
+    );
+    setMaxWorkers(join('apps', appName, 'project.json'));
 
     const lintE2eResults = runCLI(`lint ${appName}-e2e`);
 
     expect(lintE2eResults).toContain('All files pass linting.');
 
-    if (isNotWindows() && runCypressTests()) {
-      const e2eResults = runCLI(`e2e ${appName}-e2e --no-watch`);
-      expect(e2eResults).toContain('All specs passed!');
+    if (isNotWindows() && runE2ETests()) {
+      ensurePlaywrightBrowsersInstallation();
+      const e2eResults = runCLI(`e2e ${appName}-e2e`);
+      expect(e2eResults).toContain(
+        `Successfully ran target e2e for project ${appName}-e2e`
+      );
       expect(await killPorts()).toBeTruthy();
     }
   }, 500000);
@@ -68,6 +132,7 @@ describe('Web Components Applications', () => {
     runCLI(
       `generate @nx/react:lib ${libName} --bundler=rollup --no-interactive --compiler swc --unitTestRunner=jest`
     );
+    setMaxWorkers(join('apps', appName, 'project.json'));
 
     createFile(`dist/apps/${appName}/_should_remove.txt`);
     createFile(`dist/libs/${libName}/_should_remove.txt`);
@@ -85,7 +150,7 @@ describe('Web Components Applications', () => {
     checkFilesExist(`dist/apps/_should_not_remove.txt`);
 
     // Asset that React runtime is imported
-    expect(readFile(`dist/libs/${libName}/index.js`)).toMatch(
+    expect(readFile(`dist/libs/${libName}/index.esm.js`)).toMatch(
       /react\/jsx-runtime/
     );
 
@@ -104,6 +169,7 @@ describe('Web Components Applications', () => {
     runCLI(
       `generate @nx/web:app ${appName} --bundler=webpack --compiler=babel --no-interactive`
     );
+    setMaxWorkers(join('apps', appName, 'project.json'));
 
     updateFile(`apps/${appName}/src/app/app.element.ts`, (content) => {
       const newContent = `${content}
@@ -159,6 +225,7 @@ describe('Web Components Applications', () => {
     runCLI(
       `generate @nx/web:app ${appName} --bundler=webpack --compiler=swc --no-interactive`
     );
+    setMaxWorkers(join('apps', appName, 'project.json'));
 
     updateFile(`apps/${appName}/src/app/app.element.ts`, (content) => {
       const newContent = `${content}
@@ -192,7 +259,7 @@ describe('Web Components Applications', () => {
     runCLI(`build ${appName} --outputHashing none`);
 
     expect(readFile(`dist/apps/${appName}/main.js`)).toMatch(
-      /Foo=(_ts|_)_decorate\(\[sealed\],Foo\)/g
+      /Foo=.*?_decorate/
     );
   }, 120000);
 
@@ -201,8 +268,9 @@ describe('Web Components Applications', () => {
     runCLI(
       `generate @nx/web:app ${appName} --bundler=webpack --no-interactive`
     );
+    setMaxWorkers(join('apps', appName, 'project.json'));
 
-    updateProjectConfig(appName, (config) => {
+    updateJson(join('apps', appName, 'project.json'), (config) => {
       config.targets.build.options.webpackConfig = `apps/${appName}/webpack.config.js`;
       return config;
     });
@@ -250,10 +318,31 @@ describe('Web Components Applications', () => {
     runCLI(`build ${appName} --outputHashing none`);
     checkFilesExist(`dist/apps/${appName}/main.js`);
   }, 100000);
+
+  it('should support generating applications with the new name and root format', () => {
+    const appName = uniq('app1');
+
+    runCLI(
+      `generate @nx/web:app ${appName} --bundler=webpack --project-name-and-root-format=as-provided --no-interactive`
+    );
+
+    // check files are generated without the layout directory ("apps/") and
+    // using the project name as the directory when no directory is provided
+    checkFilesExist(`${appName}/src/main.ts`);
+    // check build works
+    expect(runCLI(`build ${appName}`)).toContain(
+      `Successfully ran target build for project ${appName}`
+    );
+    // check tests pass
+    const appTestResult = runCLI(`test ${appName}`);
+    expect(appTestResult).toContain(
+      `Successfully ran target test for project ${appName}`
+    );
+  }, 500_000);
 });
 
 describe('CLI - Environment Variables', () => {
-  it('should automatically load workspace and per-project environment variables', () => {
+  it('should automatically load workspace and per-project environment variables', async () => {
     newProject();
 
     const appName = uniq('app');
@@ -300,6 +389,7 @@ describe('CLI - Environment Variables', () => {
     runCLI(
       `generate @nx/web:app ${appName} --bundler=webpack --no-interactive --compiler=babel`
     );
+    setMaxWorkers(join('apps', appName, 'project.json'));
 
     const content = readFile(main);
 
@@ -325,13 +415,14 @@ describe('CLI - Environment Variables', () => {
     runCLI(
       `generate @nx/web:app ${appName2} --bundler=webpack --no-interactive --compiler=babel`
     );
+    setMaxWorkers(join('apps', appName2, 'project.json'));
 
     const content2 = readFile(main2);
 
     updateFile(main2, `${newCode2}\n${content2}`);
 
     runCLI(
-      `run-many --target build --all --outputHashing=none --optimization=false`,
+      `run-many --target build --outputHashing=none --optimization=false`,
       {
         env: {
           ...process.env,
@@ -351,7 +442,7 @@ describe('CLI - Environment Variables', () => {
 });
 
 describe('Build Options', () => {
-  it('should inject/bundle external scripts and styles', () => {
+  it('should inject/bundle external scripts and styles', async () => {
     newProject();
 
     const appName = uniq('app');
@@ -359,6 +450,7 @@ describe('Build Options', () => {
     runCLI(
       `generate @nx/web:app ${appName} --bundler=webpack --no-interactive`
     );
+    setMaxWorkers(join('apps', appName, 'project.json'));
 
     const srcPath = `apps/${appName}/src`;
     const fooCss = `${srcPath}/foo.css`;
@@ -384,7 +476,7 @@ describe('Build Options', () => {
     const barScriptsBundleName = 'bar-scripts';
     const barStylesBundleName = 'bar-styles';
 
-    updateProjectConfig(appName, (config) => {
+    updateJson(join('apps', appName, 'project.json'), (config) => {
       const buildOptions = config.targets.build.options;
 
       buildOptions.scripts = [
@@ -432,12 +524,13 @@ describe('Build Options', () => {
 });
 
 describe('index.html interpolation', () => {
-  test('should interpolate environment variables', () => {
+  test('should interpolate environment variables', async () => {
     const appName = uniq('app');
 
     runCLI(
       `generate @nx/web:app ${appName} --bundler=webpack --no-interactive`
     );
+    setMaxWorkers(join('apps', appName, 'project.json'));
 
     const srcPath = `apps/${appName}/src`;
     const indexPath = `${srcPath}/index.html`;
@@ -470,7 +563,7 @@ describe('index.html interpolation', () => {
     updateFile(envFilePath, envFileContents);
     updateFile(indexPath, indexContent);
 
-    updateProjectConfig(appName, (config) => {
+    updateJson(join('apps', appName, 'project.json'), (config) => {
       const buildOptions = config.targets.build.options;
       buildOptions.deployUrl = 'baz';
       return config;

@@ -9,9 +9,11 @@ import {
   runCLI,
   runCommandUntil,
   uniq,
-  updateProjectConfig,
   updateFile,
+  setMaxWorkers,
+  updateJson,
 } from '@nx/e2e/utils';
+import { join } from 'path';
 
 describe('Node Applications + webpack', () => {
   let proj: string;
@@ -72,13 +74,17 @@ describe('Node Applications + webpack', () => {
     runCLI(
       `generate @nx/node:app ${expressApp} --framework=express --no-interactive`
     );
+    setMaxWorkers(join('apps', expressApp, 'project.json'));
     runCLI(
       `generate @nx/node:app ${fastifyApp} --framework=fastify --no-interactive`
     );
+    setMaxWorkers(join('apps', fastifyApp, 'project.json'));
     runCLI(`generate @nx/node:app ${koaApp} --framework=koa --no-interactive`);
+    setMaxWorkers(join('apps', koaApp, 'project.json'));
     runCLI(
       `generate @nx/node:app ${nestApp} --framework=nest --bundler=webpack --no-interactive`
     );
+    setMaxWorkers(join('apps', nestApp, 'project.json'));
 
     // Use esbuild by default
     checkFilesDoNotExist(`apps/${expressApp}/webpack.config.js`);
@@ -138,6 +144,7 @@ describe('Node Applications + webpack', () => {
     runCLI(
       `generate @nx/node:app  ${expressApp} --framework=express --docker --no-interactive`
     );
+    setMaxWorkers(join('apps', expressApp, 'project.json'));
 
     checkFilesExist(`apps/${expressApp}/Dockerfile`);
   }, 300_000);
@@ -148,10 +155,12 @@ describe('Node Applications + webpack', () => {
     runCLI(
       `generate @nx/node:app ${nodeApp1} --framework=none --no-interactive`
     );
+    setMaxWorkers(join('apps', nodeApp1, 'project.json'));
     runCLI(
       `generate @nx/node:app ${nodeApp2} --framework=none --no-interactive`
     );
-    updateProjectConfig(nodeApp1, (config) => {
+    setMaxWorkers(join('apps', nodeApp2, 'project.json'));
+    updateJson(join('apps', nodeApp1, 'project.json'), (config) => {
       config.targets.serve.options.waitUntilTargets = [`${nodeApp2}:build`];
       return config;
     });

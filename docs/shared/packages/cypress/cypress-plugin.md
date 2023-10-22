@@ -9,9 +9,9 @@ Cypress is a test runner built for the modern web. It has a lot of great feature
 
 ## Setting Up Cypress
 
-> Info about [Cypress Component Testing can be found here](/packages/cypress/documents/cypress-component-testing)
+> Info about [Cypress Component Testing can be found here](/recipes/cypress/cypress-component-testing)
 >
-> Info about [using Cypress and Storybook can be found here](/packages/storybook/documents/overview-react#cypress-tests-for-storiesbook)
+> Info about [using Cypress and Storybook can be found here](/recipes/storybook/overview-react#cypress-tests-for-storiesbook)
 
 If the `@nx/cypress` package is not installed, install the version that matches your `nx` package version.
 
@@ -36,13 +36,13 @@ nx g @nx/web:app frontend
 To generate an E2E project based on an existing project, run the following generator
 
 ```shell
-nx g @nx/cypress:cypress-project your-app-name-e2e --project=your-app-name
+nx g @nx/cypress:configuration your-app-name-e2e --project=your-app-name
 ```
 
 Optionally, you can use the `--baseUrl` option if you don't want cypress plugin to serve `your-app-name`.
 
 ```shell
-nx g @nx/cypress:cypress-project your-app-name-e2e --baseUrl=http://localhost:4200
+nx g @nx/cypress:configuration your-app-name-e2e --baseUrl=http://localhost:4200
 ```
 
 Replace `your-app-name` with the app's name as defined in your `tsconfig.base.json` file or the `name` property of your `package.json`.
@@ -51,7 +51,7 @@ Replace `your-app-name` with the app's name as defined in your `tsconfig.base.js
 
 Run `nx e2e frontend-e2e` to execute e2e tests with Cypress.
 
-You can run your e2e test against a production build by using the `production` [configuration](https://nx.dev/recipes/executors/use-executor-configurations#use-executor-configurations)
+You can run your e2e test against a production build by using the `production` [configuration](https://nx.dev/plugin-features/use-task-executors#use-executor-configurations)
 
 ```shell
 nx e2e frontend-e2e --configuration=production
@@ -110,11 +110,11 @@ For adding more dynamic configurations to your cypress configuration, you can lo
 
 If you're needing to pass a variable to cypress that you wish to not commit to your repository, i.e. API keys, or dynamic values based on configurations, i.e. API Urls. This is where [Cypress environment variables](https://docs.cypress.io/guides/guides/environment-variables) can be used.
 
-There are a handful of ways to pass environment variables to Cypress, but the most common is going to be via the [`cypress.env.json` file](https://docs.cypress.io/guides/guides/environment-variables#Option-1-configuration-file), the [env executor option for cypress](https://nx.dev/packages/cypress/executors/cypress#env) or the commandline.
+There are a handful of ways to pass environment variables to Cypress, but the most common is going to be via the [`cypress.env.json` file](https://docs.cypress.io/guides/guides/environment-variables#Option-1-configuration-file), the [env executor option for cypress](/nx-api/cypress/executors/cypress#env) or the commandline.
 
 Create a `cypress.env.json` file in the projects root i.e. `apps/my-cool-app-e2e/cypress.env.json`. Cypress will automatically pick up this file. This method is helpful for configurations that you want to not commit. Just don't forget to add the file to the `.gitignore` and add documentation so people in your repo know what values to popluate in their local copy of the `cypress.env.json` file.
 
-Using [@nx/cypress:cypress](/packages/cypress/executors/cypress) env executor option is a good way to add values you want to define that you don't mine commit to the repository, such as a base API url. You can leverage [target configurations](/reference/project-configuration#targets) to define different values as well.
+Using [@nx/cypress:cypress](/nx-api/cypress/executors/cypress) env executor option is a good way to add values you want to define that you don't mine commit to the repository, such as a base API url. You can leverage [target configurations](/reference/project-configuration#targets) to define different values as well.
 
 Optionally, you can pass environment variables via the commandline with the `--env` flag.
 

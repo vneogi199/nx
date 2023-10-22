@@ -59,7 +59,7 @@ describe('vitest generator', () => {
           "reportsDirectory": "../../coverage/apps/my-test-react-app",
         },
         "outputs": [
-          "coverage/apps/my-test-react-app",
+          "{options.reportsDirectory}",
         ],
       }
     `);
@@ -96,6 +96,7 @@ describe('vitest generator', () => {
               "vitest/importMeta",
               "vite/client",
               "node",
+              "vitest",
             ],
           },
           "extends": "./tsconfig.json",

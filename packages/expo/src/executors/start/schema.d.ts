@@ -19,7 +19,4 @@ export interface ExpoStartOptions {
   localhost?: boolean;
   tunnel?: boolean;
   offline?: boolean;
-
-  // nx options
-  sync?: boolean; // default is true
 }

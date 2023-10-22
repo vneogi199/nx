@@ -146,7 +146,7 @@ Here are the outputs defined for the `auth` project:
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "outputFile": "dist/auth/lint-report.txt"
@@ -178,7 +178,7 @@ Then make a change to an endpoint of your `products-api` project:
 
 ```ts {% fileName="src/main.ts" %}
 import express from 'express';
-import { doAuth } from '@products-api/auth';
+import { doAuth } from 'auth';
 
 const host = process.env.HOST ?? 'localhost';
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -217,7 +217,7 @@ npx nx affected -t lint
 
 This can be particularly helpful in CI pipelines for larger repos, where most commits only affect a small subset of the entire workspace.
 
-{% card title="Affected Documentation" description="Checkout Affected documentation for more details" url="/packages/nx/documents/affected" /%}
+{% card title="Affected Documentation" description="Checkout Affected documentation for more details" url="/nx-api/nx/documents/affected" /%}
 
 ## What's Next
 

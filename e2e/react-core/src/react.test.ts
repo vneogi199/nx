@@ -9,11 +9,10 @@ import {
   readFile,
   runCLI,
   runCLIAsync,
-  runCypressTests,
+  runE2ETests,
   uniq,
   updateFile,
   updateJson,
-  updateProjectConfig,
 } from '@nx/e2e/utils';
 import { readFileSync } from 'fs-extra';
 import { join } from 'path';
@@ -180,9 +179,11 @@ describe('React Applications', () => {
 
     checkFilesExist(`dist/apps/${appName}/index.html`);
 
-    const e2eResults = runCLI(`e2e ${appName}-e2e --no-watch`);
-    expect(e2eResults).toContain('All specs passed!');
-    expect(await killPorts()).toBeTruthy();
+    if (runE2ETests()) {
+      const e2eResults = runCLI(`e2e ${appName}-e2e --no-watch`);
+      expect(e2eResults).toContain('All specs passed!');
+      expect(await killPorts()).toBeTruthy();
+    }
   }, 250_000);
 
   it('should generate app with routing', async () => {
@@ -227,21 +228,114 @@ describe('React Applications', () => {
     );
   }, 250_000);
 
+  it('should support generating projects with the new name and root format', () => {
+    const appName = uniq('app1');
+    const libName = uniq('@my-org/lib1');
+
+    runCLI(
+      `generate @nx/react:app ${appName} --bundler=webpack --project-name-and-root-format=as-provided --no-interactive`
+    );
+
+    // check files are generated without the layout directory ("apps/") and
+    // using the project name as the directory when no directory is provided
+    checkFilesExist(`${appName}/src/main.tsx`);
+    // check build works
+    expect(runCLI(`build ${appName}`)).toContain(
+      `Successfully ran target build for project ${appName}`
+    );
+    // check tests pass
+    const appTestResult = runCLI(`test ${appName}`);
+    expect(appTestResult).toContain(
+      `Successfully ran target test for project ${appName}`
+    );
+
+    // assert scoped project names are not supported when --project-name-and-root-format=derived
+    expect(() =>
+      runCLI(
+        `generate @nx/react:lib ${libName} --unit-test-runner=jest --buildable --project-name-and-root-format=derived --no-interactive`
+      )
+    ).toThrow();
+
+    runCLI(
+      `generate @nx/react:lib ${libName} --unit-test-runner=jest --buildable --project-name-and-root-format=as-provided --no-interactive`
+    );
+
+    // check files are generated without the layout directory ("libs/") and
+    // using the project name as the directory when no directory is provided
+    checkFilesExist(`${libName}/src/index.ts`);
+    // check build works
+    expect(runCLI(`build ${libName}`)).toContain(
+      `Successfully ran target build for project ${libName}`
+    );
+    // check tests pass
+    const libTestResult = runCLI(`test ${libName}`);
+    expect(libTestResult).toContain(
+      `Successfully ran target test for project ${libName}`
+    );
+  }, 500_000);
+
   describe('React Applications: --style option', () => {
+    it('should support styled-jsx', async () => {
+      const appName = uniq('app');
+      runCLI(
+        `generate @nx/react:app ${appName} --style=styled-jsx --bundler=vite --no-interactive`
+      );
+
+      // update app to use styled-jsx
+      updateFile(
+        `apps/${appName}/src/app/app.tsx`,
+        `
+       import NxWelcome from './nx-welcome';
+
+        export function App() {
+          return (
+            <div>
+              <style jsx>{'h1 { color: red }'}</style>
+
+              <NxWelcome title="${appName}" />
+            </div>
+          );
+        }
+
+        export default App;
+
+       `
+      );
+
+      // update e2e test to check for styled-jsx change
+
+      updateFile(
+        `apps/${appName}-e2e/src/e2e/app.cy.ts`,
+        `
+       describe('react-test', () => {
+        beforeEach(() => cy.visit('/'));
+      
+        it('should have red colour', () => {
+
+          cy.get('h1').should('have.css', 'color', 'rgb(255, 0, 0)');
+        });
+      });
+      
+       `
+      );
+      if (runE2ETests()) {
+        const e2eResults = runCLI(`e2e ${appName}-e2e --no-watch --verbose`);
+        expect(e2eResults).toContain('All specs passed!');
+      }
+    }, 250_000);
     it.each`
       style
       ${'css'}
       ${'scss'}
       ${'less'}
-      ${'styl'}
-    `('should support global and css modules', ({ style }) => {
+    `('should support global and css modules', async ({ style }) => {
       const appName = uniq('app');
       runCLI(
         `generate @nx/react:app ${appName} --style=${style} --bundler=webpack --no-interactive`
       );
 
       // make sure stylePreprocessorOptions works
-      updateProjectConfig(appName, (config) => {
+      updateJson(join('apps', appName, 'project.json'), (config) => {
         config.targets.build.options.stylePreprocessorOptions = {
           includePaths: ['libs/shared/lib'],
         };
@@ -363,7 +457,7 @@ async function testGeneratedApp(
     'Test Suites: 1 passed, 1 total'
   );
 
-  if (opts.checkE2E && runCypressTests()) {
+  if (opts.checkE2E && runE2ETests()) {
     const e2eResults = runCLI(`e2e ${appName}-e2e --no-watch`);
     expect(e2eResults).toContain('All specs passed!');
     expect(await killPorts()).toBeTruthy();

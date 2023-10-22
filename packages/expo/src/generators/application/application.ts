@@ -1,5 +1,4 @@
 import {
-  convertNxGenerator,
   formatFiles,
   GeneratorCallback,
   joinPathFragments,
@@ -23,7 +22,17 @@ export async function expoApplicationGenerator(
   host: Tree,
   schema: Schema
 ): Promise<GeneratorCallback> {
-  const options = normalizeOptions(host, schema);
+  return await expoApplicationGeneratorInternal(host, {
+    projectNameAndRootFormat: 'derived',
+    ...schema,
+  });
+}
+
+export async function expoApplicationGeneratorInternal(
+  host: Tree,
+  schema: Schema
+): Promise<GeneratorCallback> {
+  const options = await normalizeOptions(host, schema);
 
   createApplicationFiles(host, options);
   addProject(host, options);
@@ -57,6 +66,3 @@ export async function expoApplicationGenerator(
 }
 
 export default expoApplicationGenerator;
-export const expoApplicationSchematic = convertNxGenerator(
-  expoApplicationGenerator
-);
